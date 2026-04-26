@@ -38,17 +38,40 @@ export async function GET() {
       attendancePercentage = Math.round((presentCount / todayRecords.length) * 100)
     }
 
-    // Get recent classes list
+    // Get recent classes with teacher info
     const { data: recentClasses } = await supabase
       .from('classes')
-      .select('id, name, year, department')
+      .select('id, name, year, department, class_teacher_id, teacher:teachers(id, user:users(name))')
       .order('created_at', { ascending: false })
       .limit(4)
+
+    // Get student counts per class
+    const classIds = (recentClasses || []).map(c => c.id)
+    let classCounts: Record<string, number> = {}
+    if (classIds.length > 0) {
+      const { data: students } = await supabase
+        .from('students')
+        .select('class_id')
+        .in('class_id', classIds)
+      
+      for (const s of (students || [])) {
+        if (s.class_id) {
+          classCounts[s.class_id] = (classCounts[s.class_id] || 0) + 1
+        }
+      }
+    }
+
+    // Enrich classes with student count
+    const enrichedClasses = (recentClasses || []).map(c => ({
+      ...c,
+      studentCount: classCounts[c.id] || 0,
+      teacherName: (c as any).teacher?.user?.name || null,
+    }))
 
     // Get recent subjects list
     const { data: recentSubjects } = await supabase
       .from('subjects')
-      .select('id, name, code')
+      .select('id, name, code, sem, year')
       .order('created_at', { ascending: false })
       .limit(4)
 
@@ -58,7 +81,7 @@ export async function GET() {
       totalClasses,
       totalSubjects,
       attendancePercentage,
-      recentClasses: recentClasses || [],
+      recentClasses: enrichedClasses,
       recentSubjects: recentSubjects || [],
     })
   } catch (error) {

@@ -10,13 +10,48 @@ export async function GET() {
   }
 
   try {
+    // Fetch teachers with user info
     const { data: teachers, error } = await supabase
       .from('teachers')
       .select('*, user:users(*)')
     
     if (error) throw error
+
+    // Fetch all teacher_assignments with class and subject info
+    const { data: assignments } = await supabase
+      .from('teacher_assignments')
+      .select('*, class:classes(id, name, year), subject:subjects(id, name, code)')
+
+    // Fetch classes where teacher is class_teacher
+    const { data: classTeacherClasses } = await supabase
+      .from('classes')
+      .select('id, name, year, class_teacher_id')
+
+    // Enrich each teacher with their assigned classes/subjects
+    const enriched = (teachers || []).map(t => {
+      // Classes from teacher_assignments
+      const teacherAssignments = (assignments || []).filter(a => a.teacher_id === t.id)
+      const assignedClasses = Array.from(
+        new Map(teacherAssignments.filter(a => a.class).map(a => [a.class.id, a.class])).values()
+      )
+      const assignedSubjects = Array.from(
+        new Map(teacherAssignments.filter(a => a.subject).map(a => [a.subject.id, a.subject])).values()
+      )
+
+      // Classes where this teacher is class_teacher (but not already in assignments)
+      const classTeacherOnly = (classTeacherClasses || [])
+        .filter(c => c.class_teacher_id === t.id && !assignedClasses.some((ac: any) => ac.id === c.id))
+      
+      return {
+        ...t,
+        assignedClasses: [...assignedClasses, ...classTeacherOnly],
+        assignedSubjects,
+        totalAssignedClasses: assignedClasses.length + classTeacherOnly.length,
+        totalAssignedSubjects: assignedSubjects.length,
+      }
+    })
     
-    return NextResponse.json(teachers)
+    return NextResponse.json(enriched)
   } catch (error) {
     console.error(error)
     return new NextResponse('Internal Error', { status: 500 })

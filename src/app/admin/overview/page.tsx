@@ -10,8 +10,8 @@ interface OverviewData {
   totalClasses: number;
   totalSubjects: number;
   attendancePercentage: number;
-  recentClasses: { id: string; name: string; year: string; department: string }[];
-  recentSubjects: { id: string; name: string; code: string }[];
+  recentClasses: { id: string; name: string; year: string; department: string; studentCount: number; teacherName: string | null }[];
+  recentSubjects: { id: string; name: string; code: string; sem?: string; year?: string }[];
 }
 
 const classColors = ["bg-emerald-500", "bg-indigo-500", "bg-pink-500", "bg-blue-500", "bg-amber-500"];
@@ -204,9 +204,14 @@ export default function AdminOverview() {
                       >
                         {item.name?.charAt(0) || "C"}
                       </div>
-                      <span className="font-medium text-sm text-slate-700 group-hover:text-blue-600 transition-colors">
-                        {item.name}
-                      </span>
+                      <div>
+                        <span className="font-medium text-sm text-slate-700 group-hover:text-blue-600 transition-colors block">
+                          {item.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {item.studentCount} students{item.teacherName ? ` · ${item.teacherName}` : ""}
+                        </span>
+                      </div>
                     </div>
                     <ChevronRight
                       size={14}
@@ -250,9 +255,14 @@ export default function AdminOverview() {
                       >
                         {item.name?.charAt(0) || "S"}
                       </div>
-                      <span className="font-medium text-sm text-slate-700 group-hover:text-blue-600 transition-colors">
-                        {item.name}
-                      </span>
+                      <div>
+                        <span className="font-medium text-sm text-slate-700 group-hover:text-blue-600 transition-colors block">
+                          {item.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {item.code}{item.sem ? ` · Sem ${item.sem}` : ""}
+                        </span>
+                      </div>
                     </div>
                     <ChevronRight
                       size={14}
