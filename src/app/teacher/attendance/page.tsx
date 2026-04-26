@@ -488,9 +488,35 @@ export default function TeacherAttendance() {
             </div>
           </div>
 
-          {/* Date Picker & Fetch */}
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-xs">
+          {/* Filters: Class, Subject, Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
+                Class
+              </label>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
+              >
+                {classes.length === 0 && <option value="">No Classes Assigned</option>}
+                {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.year})</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
+                Subject
+              </label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
+              >
+                {subjects.length === 0 && <option value="">No Subjects Found</option>}
+                {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
+              </select>
+            </div>
+            <div>
               <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
                 Select Date
               </label>
@@ -502,9 +528,11 @@ export default function TeacherAttendance() {
                 className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
               />
             </div>
+          </div>
+          <div className="flex justify-start">
             <button
               onClick={fetchPastAttendance}
-              disabled={loadingPast || !pastDate}
+              disabled={loadingPast || !pastDate || !selectedClass}
               className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 disabled:opacity-50 shadow-lg"
             >
               {loadingPast ? "Loading..." : "Fetch Records"}
