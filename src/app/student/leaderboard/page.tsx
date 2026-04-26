@@ -23,6 +23,8 @@ export default function LeaderboardPage() {
   const [bottomPerformers, setBottomPerformers] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<LeaderboardEntry | null>(null);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
@@ -32,6 +34,9 @@ export default function LeaderboardPage() {
         setTopPerformers(data.top || []);
         setBottomPerformers(data.bottom || []);
         setMyRank(data.myRank || null);
+        if (data.error) {
+          setErrorMessage(data.error);
+        }
       } catch {
         toast.error("Failed to load leaderboard");
       } finally {
@@ -86,9 +91,11 @@ export default function LeaderboardPage() {
       {!loading && !hasData && (
         <div className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center gap-3">
           <BarChart3 size={40} className="text-slate-300" />
-          <h3 className="text-lg font-bold text-slate-600">No Attendance Data Yet</h3>
+          <h3 className="text-lg font-bold text-slate-600">
+            {errorMessage ? "Cannot Load Leaderboard" : "No Attendance Data Yet"}
+          </h3>
           <p className="text-sm text-slate-400 text-center max-w-xs">
-            Once attendance is marked for your class, rankings will appear here.
+            {errorMessage || "Once attendance is marked for your class, rankings will appear here."}
           </p>
         </div>
       )}

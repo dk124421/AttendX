@@ -29,6 +29,7 @@ export async function GET(req: Request) {
       return new NextResponse('Teacher profile not found', { status: 404 })
     }
 
+    // Verify teacher is assigned to this class (via teacher_assignments OR class_teacher_id)
     const { data: assignment } = await supabase
       .from('teacher_assignments')
       .select('id')
@@ -36,7 +37,15 @@ export async function GET(req: Request) {
       .eq('class_id', classId)
       .limit(1)
 
-    if (!assignment || assignment.length === 0) {
+    // Also check if teacher is the class teacher
+    const { data: classTeacher } = await supabase
+      .from('classes')
+      .select('id')
+      .eq('id', classId)
+      .eq('class_teacher_id', teacherProfile.id)
+      .limit(1)
+
+    if ((!assignment || assignment.length === 0) && (!classTeacher || classTeacher.length === 0)) {
       return new NextResponse('Not assigned to this class', { status: 403 })
     }
 
