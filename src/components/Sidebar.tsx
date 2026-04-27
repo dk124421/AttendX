@@ -43,7 +43,6 @@ const menuItems = {
   ],
   STUDENT: [
     { name: "Dashboard", icon: LayoutDashboard, href: "/student" },
-    { name: "Students", icon: Users, href: "/student/students" },
     { name: "Classes", icon: Layers, href: "/student/classes" },
     { name: "Leaderboard", icon: Trophy, href: "/student/leaderboard" },
     { name: "Calendar", icon: CalendarDays, href: "/student/calendar" },
