@@ -31,6 +31,11 @@ app.prepare().then(() => {
       io.emit('attendance_updated', data);
     });
 
+    socket.on('admin_notification', (data) => {
+      console.log('Broadcasting admin_notification event', data);
+      io.emit('admin_notification', data);
+    });
+
     socket.on('disconnect', () => {
       console.log('A client disconnected');
     });

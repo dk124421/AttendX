@@ -98,15 +98,8 @@ export async function GET(req: Request) {
       r.rank = i + 1
     })
 
-    // Return top 5 and bottom 5
-    const top = results.slice(0, 5)
-    const bottom = results.length > 5
-      ? results.slice(-5).reverse()
-      : results.length > 0
-        ? results.slice(Math.max(0, results.length - 5)).reverse()
-        : []
-
-    return NextResponse.json({ top, bottom })
+    // Return all students
+    return NextResponse.json({ all: results })
   } catch (error) {
     console.error(error)
     return new NextResponse('Internal Error', { status: 500 })

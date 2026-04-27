@@ -24,16 +24,15 @@ const menuItems = {
     { name: "Students", icon: GraduationCap, href: "/admin/students" },
     { name: "Teachers", icon: UserCircle, href: "/admin/teachers" },
     { name: "Classes", icon: BookOpen, href: "/admin/classes" },
-    { name: "Courses", icon: BookOpen, href: "/admin/courses" },
+    { name: "Analytics", icon: BarChart3, href: "/admin/analytics" },
   ],
   TEACHER: [
     { name: "Attendance", icon: ClipboardCheck, href: "/teacher" },
-    { name: "Reports", icon: BarChart3, href: "/teacher/reports" },
+    { name: "Debarred", icon: BarChart3, href: "/teacher/reports" },
     { name: "Leaderboard", icon: Trophy, href: "/teacher/leaderboard" },
   ],
   STUDENT: [
     { name: "Dashboard", icon: LayoutDashboard, href: "/student" },
-    { name: "Students", icon: Users, href: "/student/students" },
     { name: "Classes", icon: BookOpen, href: "/student/classes" },
     { name: "Leaderboard", icon: Trophy, href: "/student/leaderboard" },
   ],

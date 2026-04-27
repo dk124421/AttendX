@@ -16,7 +16,6 @@ export default function AdminStudentsPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userToDelete, setUserToDelete] = useState<any>(null);
@@ -120,29 +119,6 @@ export default function AdminStudentsPage() {
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!selectedUser || !newPassword) return;
-    try {
-      const res = await fetch("/api/admin/password", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedUser.user?.id, newPassword }),
-      });
-
-      if (res.ok) {
-        toast.success("Password changed successfully!");
-        setShowPasswordModal(false);
-        setNewPassword("");
-        setSelectedUser(null);
-      } else {
-        const errData = await res.text();
-        toast.error(errData || "Failed to change password");
-      }
-    } catch (err) {
-      toast.error("Something went wrong");
-    }
-  };
-
   // Helper to get course/branch name
   const getCourseName = (courseId: string) => courses.find((c) => c.id === courseId)?.name || "—";
   const getBranchName = (courseId: string, branchId: string) => {
@@ -203,7 +179,6 @@ export default function AdminStudentsPage() {
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Course</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Branch</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Year</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Class</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
@@ -256,23 +231,8 @@ export default function AdminStudentsPage() {
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {student.year || "—"}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.class?.name ? 'bg-blue-50 text-blue-700' : 'bg-slate-50 text-slate-400'}`}>
-                        {student.class?.name || "Not Assigned"}
-                      </span>
-                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedUser(student);
-                            setShowPasswordModal(true);
-                          }}
-                          className="inline-flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
-                          title="Change Password"
-                        >
-                          <Key size={14} />
-                        </button>
                         <button
                           onClick={() => {
                             setModalMode("edit");
@@ -287,6 +247,7 @@ export default function AdminStudentsPage() {
                               year: student.year || "",
                               contactEmail: student.contact_email || "",
                             });
+                            setNewPassword("");
                             setShowAddModal(true);
                           }}
                           className="inline-flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
@@ -310,7 +271,7 @@ export default function AdminStudentsPage() {
                 ))}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
                     No students found.
                   </td>
                 </tr>
@@ -462,6 +423,55 @@ export default function AdminStudentsPage() {
                   </div>
                 )}
 
+                {/* Change Password Section (edit mode only) */}
+                {modalMode === "edit" && (
+                  <div className="border-t border-slate-100 pt-4 mt-2">
+                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Change Password <span className="text-slate-400 font-normal normal-case">(optional)</span></label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        placeholder="Leave blank to keep current password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 pr-11 text-sm outline-none focus:ring-2 focus:ring-amber-500/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    {newPassword && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!newPassword) return;
+                          try {
+                            const res = await fetch("/api/admin/password", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ userId: formData.userId, newPassword }),
+                            });
+                            if (res.ok) {
+                              toast.success("Password changed!");
+                              setNewPassword("");
+                            } else {
+                              toast.error("Failed to change password");
+                            }
+                          } catch {
+                            toast.error("Something went wrong");
+                          }
+                        }}
+                        className="mt-2 w-full rounded-xl bg-amber-500 p-2.5 text-sm font-bold text-white transition-all hover:bg-amber-600 active:scale-95"
+                      >
+                        Update Password
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
@@ -483,72 +493,7 @@ export default function AdminStudentsPage() {
         )}
       </AnimatePresence>
 
-      {/* Change Password Modal */}
-      <AnimatePresence>
-        {showPasswordModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-md overflow-hidden rounded-[32px] bg-white p-8 shadow-2xl"
-            >
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Change Password</h3>
-                  <p className="text-sm text-slate-500">
-                    Set a new password for <span className="font-semibold text-emerald-600">{selectedUser?.user?.name}</span>
-                  </p>
-                </div>
-                <button
-                  onClick={() => { setShowPasswordModal(false); setNewPassword(""); }}
-                  className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                >
-                  <X size={20} />
-                </button>
-              </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">New Password</label>
-                  <div className="relative">
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      placeholder="Enter new password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 pr-11 text-sm outline-none focus:ring-2 focus:ring-amber-500/20"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => { setShowPasswordModal(false); setNewPassword(""); }}
-                    className="flex-1 rounded-xl bg-slate-100 p-3 font-semibold text-slate-600 transition-all hover:bg-slate-200"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleChangePassword}
-                    disabled={!newPassword}
-                    className="flex-1 rounded-xl bg-amber-500 p-3 font-bold text-white transition-all hover:bg-amber-600 shadow-lg shadow-amber-100 active:scale-95 disabled:opacity-50"
-                  >
-                    Update Password
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>

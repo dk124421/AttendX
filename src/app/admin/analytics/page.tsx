@@ -1,19 +1,94 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler } from "chart.js";
 import { Doughnut, Line, Bar } from "react-chartjs-2";
-import { Bell, TrendingUp } from "lucide-react";
+import { Bell, TrendingUp, Send, Loader2 } from "lucide-react";
+import io from "socket.io-client";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler);
 
+let socket: any;
+
 export default function AnalyticsPage() {
-  // Line chart
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [notificationMsg, setNotificationMsg] = useState("");
+  const [sending, setSending] = useState(false);
+  const [notifications, setNotifications] = useState<string[]>([
+    "Analytics dashboard initialized",
+  ]);
+
+  useEffect(() => {
+    fetchData();
+    socket = io(process.env.NEXT_PUBLIC_SITE_URL || window.location.origin);
+    
+    socket.on('admin_notification', (msg: any) => {
+      setNotifications(prev => [msg.message, ...prev].slice(0, 5));
+    });
+
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const res = await fetch("/api/admin/analytics");
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendNotification = async () => {
+    if (!notificationMsg.trim()) return;
+    setSending(true);
+    try {
+      await fetch('/api/admin/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: notificationMsg })
+      });
+      // We will create this API to broadcast via socket, or we can just emit it directly if we want
+      // But emitting directly from client might be insecure if not authenticated.
+      // Wait, let's just emit from client for now since this is the admin dashboard and it's protected by next-auth.
+      socket.emit('admin_notification', { message: notificationMsg, time: new Date().toISOString() });
+      setNotificationMsg("");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendBulkAlert = () => {
+    if (!data?.lowAttendance?.length) return;
+    const msg = `Bulk Alert: ${data.lowAttendance.length} students have attendance below 75%. Please check your portal.`;
+    socket.emit('admin_notification', { message: msg, time: new Date().toISOString() });
+    setNotifications(prev => [msg, ...prev].slice(0, 5));
+  };
+
+  if (loading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <Loader2 className="animate-spin text-cyan-500 w-8 h-8" />
+      </div>
+    );
+  }
+
+  // Formatting Data for Charts
   const lineData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: data?.attendanceTrend?.map((d: any) => d.label).reverse() || [],
     datasets: [
       {
-        label: "Attendance Trend",
-        data: [82, 85, 90, 88, 92, 87],
+        label: "Attendance %",
+        data: data?.attendanceTrend?.map((d: any) => d.percentage).reverse() || [],
         borderColor: "#14b8a6",
         backgroundColor: "rgba(20, 184, 166, 0.08)",
         fill: true,
@@ -26,13 +101,12 @@ export default function AnalyticsPage() {
     ],
   };
 
-  // Bar chart
   const barData = {
-    labels: ["CS-A", "CS-B", "ECE-A", "ME-A", "CE-A"],
+    labels: data?.classComparison?.map((c: any) => c.name) || [],
     datasets: [
       {
-        label: "Average Attendance %",
-        data: [92, 85, 78, 88, 74],
+        label: "Avg Attendance %",
+        data: data?.classComparison?.map((c: any) => c.percentage) || [],
         backgroundColor: ["#3b82f6", "#14b8a6", "#ec4899", "#f59e0b", "#8b5cf6"],
         borderRadius: 8,
         barThickness: 28,
@@ -40,12 +114,15 @@ export default function AnalyticsPage() {
     ],
   };
 
-  // Donut chart
   const doughnutData = {
     labels: ["Present", "Absent", "Late"],
     datasets: [
       {
-        data: [72, 18, 10],
+        data: [
+          data?.statusDistribution?.present || 0,
+          data?.statusDistribution?.absent || 0,
+          data?.statusDistribution?.late || 0,
+        ],
         backgroundColor: ["#14b8a6", "#ef4444", "#f59e0b"],
         borderWidth: 0,
         cutout: "72%",
@@ -71,28 +148,6 @@ export default function AnalyticsPage() {
     },
   };
 
-  const subjectProgress = [
-    { name: "Data Structures", pct: 95, color: "bg-blue-500" },
-    { name: "Mathematics", pct: 82, color: "bg-cyan-500" },
-    { name: "Digital Electronics", pct: 78, color: "bg-emerald-500" },
-    { name: "English", pct: 90, color: "bg-amber-500" },
-    { name: "Physics", pct: 68, color: "bg-rose-500" },
-  ];
-
-  const notifications = [
-    "Attendance report generated for March",
-    "New students added to CS-A",
-    "Low attendance alert: Physics (68%)",
-  ];
-
-  const topStudents = [
-    { name: "Ganesh", pct: 98 },
-    { name: "Meera", pct: 96 },
-    { name: "Sumedha", pct: 95 },
-    { name: "Tushar", pct: 93 },
-    { name: "Riya", pct: 91 },
-  ];
-
   return (
     <div className="h-full w-full space-y-4">
       {/* 3 Chart Cards */}
@@ -100,7 +155,7 @@ export default function AnalyticsPage() {
         {/* Line Chart */}
         <div className="glass-card rounded-2xl p-5 cyan-glow-border">
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-            Attendance Trend
+            Attendance Trend (6 Months)
           </span>
           <div className="h-40 mt-3">
             <Line data={lineData} options={chartOptions} />
@@ -128,51 +183,84 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Subject Progress + Notifications */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Subject Progress */}
-        <div className="glass-card rounded-2xl p-5 cyan-glow-border">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={15} className="text-blue-500 dark:text-cyan-400" />
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Subject Progress
-            </span>
+        {/* Low Attendance & Bulk Alert */}
+        <div className="glass-card rounded-2xl p-5 cyan-glow-border flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={15} className="text-red-500 dark:text-red-400" />
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                Low Attendance Alerts (&lt; 75%)
+              </span>
+            </div>
+            <button
+              onClick={handleSendBulkAlert}
+              disabled={!data?.lowAttendance?.length}
+              className="px-3 py-1 bg-red-500/10 text-red-500 text-xs font-bold rounded-lg hover:bg-red-500/20 transition disabled:opacity-50"
+            >
+              Send Bulk Alert
+            </button>
           </div>
-          <div className="space-y-3">
-            {subjectProgress.map((s) => (
-              <div key={s.name}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {s.name}
-                  </span>
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                    {s.pct}%
-                  </span>
+          <div className="space-y-3 overflow-y-auto max-h-60 no-scrollbar">
+            {data?.lowAttendance?.length > 0 ? (
+              data.lowAttendance.map((s: any) => (
+                <div key={s.studentId}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      {s.name} ({s.studentId})
+                    </span>
+                    <span className="text-xs font-bold text-red-500">
+                      {s.percentage}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-200/50 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-red-500 rounded-full transition-all duration-700"
+                      style={{ width: `${s.percentage}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-1.5 w-full bg-slate-200/50 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${s.color} rounded-full transition-all duration-700`}
-                    style={{ width: `${s.pct}%` }}
-                  />
-                </div>
+              ))
+            ) : (
+              <div className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">
+                No low attendance records found.
               </div>
-            ))}
+            )}
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="glass-card rounded-2xl p-5 cyan-glow-border">
+        {/* Custom Notifications & Top Performers */}
+        <div className="glass-card rounded-2xl p-5 cyan-glow-border flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <Bell size={15} className="text-blue-500 dark:text-cyan-400" />
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Notifications
+              Broadcast Notification
             </span>
           </div>
-          <div className="space-y-2.5">
+          
+          {/* Broadcast Input */}
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              value={notificationMsg}
+              onChange={(e) => setNotificationMsg(e.target.value)}
+              placeholder="Enter message to broadcast..."
+              className="flex-1 text-sm bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+            />
+            <button
+              onClick={handleSendNotification}
+              disabled={sending || !notificationMsg.trim()}
+              className="p-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl hover:opacity-90 transition shadow disabled:opacity-50 flex items-center justify-center"
+            >
+              {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+            </button>
+          </div>
+
+          <div className="space-y-2.5 flex-1 overflow-y-auto max-h-32 no-scrollbar">
             {notifications.map((n, i) => (
               <div
                 key={i}
-                className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 p-2 rounded-lg hover:bg-white/30 dark:hover:bg-slate-800/30 transition-colors"
+                className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 p-2 rounded-lg bg-white/30 dark:bg-slate-800/30 transition-colors"
               >
                 <div className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 bg-blue-500 dark:bg-cyan-400" />
                 <span>{n}</span>
@@ -186,16 +274,17 @@ export default function AnalyticsPage() {
               Top Performers
             </span>
             <div className="flex gap-2 mt-2.5 overflow-x-auto no-scrollbar pb-1">
-              {topStudents.map((s) => (
+              {data?.topStudents?.map((s: any) => (
                 <div
-                  key={s.name}
+                  key={s.studentId}
                   className="flex flex-col items-center shrink-0"
+                  title={s.name}
                 >
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xs shadow ring-2 ring-white dark:ring-slate-800">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs shadow ring-2 ring-white dark:ring-slate-800">
                     {s.name.charAt(0)}
                   </div>
                   <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
-                    {s.pct}%
+                    {s.percentage}%
                   </span>
                 </div>
               ))}

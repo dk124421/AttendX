@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
 
   if (!session || session.user.role !== 'STUDENT') {
@@ -11,6 +11,9 @@ export async function GET() {
   }
 
   try {
+    const { searchParams } = new URL(req.url)
+    const subjectId = searchParams.get('subjectId')
+
     // Get student profile and class_id
     const { data: student, error: studentError } = await supabase
       .from('students')
@@ -38,11 +41,19 @@ export async function GET() {
     const studentIds = classmates.map((s: any) => s.id)
 
     // Get attendance records for all classmates in this class
-    const { data: attendances, error: attError } = await supabase
+    let query = supabase
       .from('attendance')
       .select('student_id, status')
       .eq('class_id', classId)
       .in('student_id', studentIds)
+
+    if (subjectId === 'general') {
+      query = query.is('subject_id', null)
+    } else if (subjectId && subjectId !== 'overall') {
+      query = query.eq('subject_id', subjectId)
+    }
+
+    const { data: attendances, error: attError } = await query
 
     if (attError) throw attError
 

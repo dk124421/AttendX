@@ -1,25 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, LayoutGrid, CheckCircle2, ChevronRight, User, BookOpen, GraduationCap, UserCircle } from "lucide-react";
+import { Users, LayoutGrid, CheckCircle2, ChevronRight, GraduationCap, UserCircle, BookOpen, Send, Megaphone } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
+
+interface ClassAttendance {
+  id: string;
+  name: string;
+  present: number;
+  total: number;
+}
 
 interface OverviewData {
   totalStudents: number;
   totalTeachers: number;
   totalClasses: number;
-  totalSubjects: number;
   attendancePercentage: number;
   recentClasses: { id: string; name: string; year: string; department: string }[];
-  recentSubjects: { id: string; name: string; code: string }[];
+  classAttendance: ClassAttendance[];
 }
 
 const classColors = ["bg-emerald-500", "bg-indigo-500", "bg-pink-500", "bg-blue-500", "bg-amber-500"];
-const subjectColors = ["bg-blue-500", "bg-cyan-500", "bg-emerald-500", "bg-rose-500", "bg-purple-500"];
 
 export default function AdminOverview() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Custom notification state
+  const [notifMessage, setNotifMessage] = useState("");
+  const [sendingNotif, setSendingNotif] = useState(false);
 
   useEffect(() => {
     fetchOverview();
@@ -39,13 +49,37 @@ export default function AdminOverview() {
     }
   };
 
+  const handleSendNotification = async () => {
+    if (!notifMessage.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+    setSendingNotif(true);
+    try {
+      const res = await fetch("/api/admin/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: notifMessage }),
+      });
+      if (res.ok) {
+        toast.success("Notification sent to all students!");
+        setNotifMessage("");
+      } else {
+        toast.error("Failed to send notification");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setSendingNotif(false);
+    }
+  };
+
   const totalStudents = data?.totalStudents ?? 0;
   const totalTeachers = data?.totalTeachers ?? 0;
   const totalClasses = data?.totalClasses ?? 0;
-  const totalSubjects = data?.totalSubjects ?? 0;
   const attendance = data?.attendancePercentage ?? 0;
   const recentClasses = data?.recentClasses ?? [];
-  const recentSubjects = data?.recentSubjects ?? [];
+  const classAttendance = data?.classAttendance ?? [];
 
   return (
     <div className="h-full w-full">
@@ -110,8 +144,56 @@ export default function AdminOverview() {
           </div>
         </div>
 
+        {/* Class-wise Attendance Stats */}
+        <div className="space-y-3">
+          <h4 className="font-bold text-sm text-slate-800 px-1">
+            Class-wise Attendance Today
+          </h4>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {Array(3).fill(0).map((_, i) => (
+                <div key={i} className="h-20 bg-slate-100/50 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : classAttendance.length === 0 ? (
+            <p className="text-xs text-slate-400 px-2.5 py-4 text-center">No classes found</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {classAttendance.map((cls, i) => {
+                const pct = cls.total > 0 ? Math.round((cls.present / cls.total) * 100) : 0;
+                return (
+                  <div
+                    key={cls.id}
+                    className="rounded-xl p-4 bg-white/50 border border-slate-100 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg ${classColors[i % classColors.length]} text-white font-bold text-xs shadow-sm`}
+                        >
+                          {cls.name?.charAt(0) || "C"}
+                        </div>
+                        <span className="font-semibold text-sm text-slate-700">{cls.name}</span>
+                      </div>
+                      <span className={`text-lg font-extrabold ${pct >= 75 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
+                        {cls.present}/{cls.total}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${pct >= 75 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Lists Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Quick Stats */}
           <div className="space-y-3">
             <h4 className="font-bold text-sm text-slate-800 px-1">
@@ -176,7 +258,7 @@ export default function AdminOverview() {
           <div className="space-y-3">
             <div className="flex justify-between items-center px-1">
               <h4 className="font-bold text-sm text-slate-800">
-                Classes
+                Recent Classes
               </h4>
               <Link
                 href="/admin/classes"
@@ -217,51 +299,32 @@ export default function AdminOverview() {
               )}
             </div>
           </div>
+        </div>
 
-          {/* Subjects List */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center px-1">
-              <h4 className="font-bold text-sm text-slate-800">
-                Subjects
-              </h4>
-              <Link
-                href="/admin/subjects"
-                className="text-[11px] font-bold text-blue-500 hover:underline"
-              >
-                Manage
-              </Link>
-            </div>
-            <div className="space-y-1">
-              {loading ? (
-                Array(3).fill(0).map((_, i) => (
-                  <div key={i} className="h-10 bg-slate-100/50 rounded-xl animate-pulse" />
-                ))
-              ) : recentSubjects.length === 0 ? (
-                <p className="text-xs text-slate-400 px-2.5 py-4 text-center">No subjects yet</p>
-              ) : (
-                recentSubjects.map((item, i) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-white/50 transition-colors cursor-pointer group bg-white/20 border border-slate-100/50"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`flex h-7 w-7 items-center justify-center rounded-lg ${subjectColors[i % subjectColors.length]} text-white font-bold text-xs shadow-sm`}
-                      >
-                        {item.name?.charAt(0) || "S"}
-                      </div>
-                      <span className="font-medium text-sm text-slate-700 group-hover:text-blue-600 transition-colors">
-                        {item.name}
-                      </span>
-                    </div>
-                    <ChevronRight
-                      size={14}
-                      className="text-slate-300 group-hover:text-blue-500 transition-all group-hover:translate-x-0.5"
-                    />
-                  </div>
-                ))
-              )}
-            </div>
+        {/* Send Custom Notification */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <Megaphone size={16} className="text-indigo-500" />
+            <h4 className="font-bold text-sm text-slate-800">
+              Send Notification to Students
+            </h4>
+          </div>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Type a message to broadcast to all students..."
+              value={notifMessage}
+              onChange={(e) => setNotifMessage(e.target.value)}
+              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+            />
+            <button
+              onClick={handleSendNotification}
+              disabled={sendingNotif || !notifMessage.trim()}
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50 shadow-lg shadow-indigo-200"
+            >
+              <Send size={14} />
+              {sendingNotif ? "Sending..." : "Send"}
+            </button>
           </div>
         </div>
       </div>

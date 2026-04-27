@@ -314,69 +314,94 @@ export default function TeacherAttendance() {
         </button>
       </div>
 
+      {/* Shared Filters */}
+      <div className="glass-card rounded-2xl p-5 space-y-4">
+        {/* Filter Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
+              Class
+            </label>
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
+            >
+              {classes.length === 0 && <option value="">No Classes Assigned</option>}
+              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
+              Year
+            </label>
+            <select
+              value={selectedYear}
+              disabled
+              className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700 opacity-80"
+            >
+              <option value={selectedYear}>{selectedYear || "—"}</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
+              Subject
+            </label>
+            <select
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
+            >
+              <option value="">-- No Subject --</option>
+              {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
+              Date
+            </label>
+            <div className="relative">
+              {mode === "mark" ? (
+                <>
+                  <input
+                    type="text"
+                    value={selectedDate}
+                    readOnly
+                    className="w-full rounded-lg glass-input py-2 px-3 pr-9 text-sm font-medium text-slate-700"
+                  />
+                  <CalendarIcon
+                    size={14}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                </>
+              ) : (
+                <input
+                  type="date"
+                  value={pastDate}
+                  onChange={(e) => setPastDate(e.target.value)}
+                  max={new Date().toISOString().split("T")[0]}
+                  className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+        {mode === "modify" && (
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={fetchPastAttendance}
+              disabled={loadingPast || !pastDate}
+              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 disabled:opacity-50 shadow-lg"
+            >
+              {loadingPast ? "Loading..." : "Fetch Records"}
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* MARK MODE */}
       {mode === "mark" && (
         <div className="glass-card rounded-2xl p-5 space-y-4">
-          {/* Filter Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
-                Class
-              </label>
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
-              >
-                {classes.length === 0 && <option value="">No Classes Assigned</option>}
-                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
-                Year
-              </label>
-              <select
-                value={selectedYear}
-                disabled
-                className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700 opacity-80"
-              >
-                <option value={selectedYear}>{selectedYear || "—"}</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
-                Subject
-              </label>
-              <select
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
-              >
-                {subjects.length === 0 && <option value="">No Subjects Found</option>}
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
-              </select>
-
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
-                Date
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={selectedDate}
-                  readOnly
-                  className="w-full rounded-lg glass-input py-2 px-3 pr-9 text-sm font-medium text-slate-700"
-                />
-                <CalendarIcon
-                  size={14}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Student Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -484,31 +509,8 @@ export default function TeacherAttendance() {
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-800">Modify Past Attendance</h2>
-              <p className="text-xs text-slate-500">Select a date to view and edit past attendance records.</p>
+              <p className="text-xs text-slate-500">Edit past attendance records for the selected class and date.</p>
             </div>
-          </div>
-
-          {/* Date Picker & Fetch */}
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-xs">
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
-                Select Date
-              </label>
-              <input
-                type="date"
-                value={pastDate}
-                onChange={(e) => setPastDate(e.target.value)}
-                max={new Date().toISOString().split("T")[0]}
-                className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
-              />
-            </div>
-            <button
-              onClick={fetchPastAttendance}
-              disabled={loadingPast || !pastDate}
-              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 disabled:opacity-50 shadow-lg"
-            >
-              {loadingPast ? "Loading..." : "Fetch Records"}
-            </button>
           </div>
 
           {/* Past Records Table */}

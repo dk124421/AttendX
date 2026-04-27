@@ -20,8 +20,7 @@ export default function TeacherLeaderboardPage() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
-  const [topPerformers, setTopPerformers] = useState<LeaderboardEntry[]>([]);
-  const [bottomPerformers, setBottomPerformers] = useState<LeaderboardEntry[]>([]);
+  const [performers, setPerformers] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
 
@@ -62,8 +61,7 @@ export default function TeacherLeaderboardPage() {
       const res = await fetch(`/api/teacher/leaderboard?classId=${selectedClass}`);
       if (res.ok) {
         const data = await res.json();
-        setTopPerformers(data.top || []);
-        setBottomPerformers(data.bottom || []);
+        setPerformers(data.all || []);
         setFetched(true);
       } else {
         toast.error("Failed to load leaderboard");
@@ -81,7 +79,7 @@ export default function TeacherLeaderboardPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Leaderboard</h1>
-        <p className="text-slate-500">Track Top 5 and Bottom 5 attendance performers in your assigned classes.</p>
+        <p className="text-slate-500">Track all students attendance performance in your assigned classes.</p>
       </header>
 
       {/* Class Selector */}
@@ -115,13 +113,9 @@ export default function TeacherLeaderboardPage() {
 
       {/* Loading State */}
       {loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {[0, 1].map((i) => (
-            <div key={i} className="space-y-4">
-              {Array(5).fill(0).map((_, j) => (
-                <div key={j} className="h-20 rounded-2xl bg-white animate-pulse shadow-sm border border-slate-100" />
-              ))}
-            </div>
+        <div className="space-y-4">
+          {Array(5).fill(0).map((_, j) => (
+            <div key={j} className="h-20 rounded-2xl bg-white animate-pulse shadow-sm border border-slate-100" />
           ))}
         </div>
       )}
@@ -129,7 +123,7 @@ export default function TeacherLeaderboardPage() {
       {/* Results */}
       {fetched && !loading && (
         <>
-          {topPerformers.length === 0 && bottomPerformers.length === 0 ? (
+          {performers.length === 0 ? (
             <div className="glass-card rounded-2xl p-12 text-center">
               <BarChart3 size={40} className="mx-auto text-slate-300 mb-4" />
               <h3 className="text-lg font-bold text-slate-600 mb-1">No Attendance Data Yet</h3>
@@ -138,92 +132,51 @@ export default function TeacherLeaderboardPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Top 5 Section */}
-              <div className="space-y-6">
-                <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-                  <Trophy className="text-amber-500" size={24} />
-                  Top 5 Performers
-                </h3>
-                <div className="space-y-4">
-                  {topPerformers.map((p, i) => (
-                    <motion.div
-                      key={p.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="group relative flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm border border-slate-100 hover:border-amber-200 transition-all"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600 font-black">
-                          {p.avatar}
-                          {p.rank <= 3 && (
-                            <div className="absolute -top-2 -left-2 rounded-full bg-amber-400 p-1 text-white shadow-sm">
-                              <Award size={12} />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800">{p.name}</p>
-                          <p className="text-xs text-slate-400">
-                            Rank #{p.rank} · {p.attended}/{p.totalClasses} classes
-                          </p>
-                        </div>
+            <div className="space-y-6">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800">
+                <Trophy className="text-amber-500" size={24} />
+                Class Rankings
+              </h3>
+              <div className="space-y-4">
+                {performers.map((p, i) => (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.05, 0.5) }} // Cap delay
+                    className={`group relative flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm border border-slate-100 transition-all ${
+                      p.percentage < 75 ? "hover:border-rose-200" : "hover:border-emerald-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`relative flex h-12 w-12 items-center justify-center rounded-xl font-black ${
+                        p.rank <= 3 ? "bg-amber-50 text-amber-600" : 
+                        p.percentage < 75 ? "bg-rose-50 text-rose-500" : "bg-slate-50 text-slate-500"
+                      }`}>
+                        {p.avatar}
+                        {p.rank <= 3 && (
+                          <div className="absolute -top-2 -left-2 rounded-full bg-amber-400 p-1 text-white shadow-sm">
+                            <Award size={12} />
+                          </div>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-emerald-600 font-black">
-                          <TrendingUp size={16} />
-                          {p.percentage}%
-                        </div>
+                      <div>
+                        <p className="font-bold text-slate-800">{p.name}</p>
+                        <p className="text-xs text-slate-400">
+                          Rank #{p.rank} · {p.attended}/{p.totalClasses} classes
+                        </p>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Bottom 5 Section */}
-              <div className="space-y-6">
-                <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-                  <Users className="text-rose-500" size={24} />
-                  Bottom 5 Performers
-                </h3>
-                <div className="space-y-4">
-                  {bottomPerformers.length === 0 ? (
-                    <div className="glass-card rounded-2xl p-5 text-center">
-                      <p className="text-sm text-emerald-500 font-semibold">
-                        🎉 Not enough data for bottom performers yet!
-                      </p>
                     </div>
-                  ) : (
-                    bottomPerformers.map((p, i) => (
-                      <motion.div
-                        key={p.id}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="group flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm border border-slate-100 hover:border-rose-200 transition-all"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 font-black group-hover:bg-rose-50 group-hover:text-rose-400 transition-colors">
-                            {p.avatar}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-800">{p.name}</p>
-                            <p className="text-xs text-slate-400">
-                              Rank #{p.rank} · {p.attended}/{p.totalClasses} classes
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1 text-rose-500 font-black">
-                            <TrendingDown size={16} />
-                            {p.percentage}%
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
+                    <div className="text-right flex items-center gap-3">
+                      <div className={`flex items-center gap-1 font-black ${
+                        p.percentage < 75 ? "text-rose-500" : "text-emerald-600"
+                      }`}>
+                        {p.percentage < 75 ? <TrendingDown size={16} /> : <TrendingUp size={16} />}
+                        {p.percentage}%
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
           )}

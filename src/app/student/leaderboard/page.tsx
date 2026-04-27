@@ -22,11 +22,29 @@ export default function LeaderboardPage() {
   const [topPerformers, setTopPerformers] = useState<LeaderboardEntry[]>([]);
   const [bottomPerformers, setBottomPerformers] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<LeaderboardEntry | null>(null);
+  
+  // Subject filter
+  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string>("overall");
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch("/api/student/classes");
+        if (res.ok) {
+          const data = await res.json();
+          setSubjects(data.subjects || []);
+        }
+      } catch {}
+    };
+    fetchSubjects();
+  }, []);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
+      setLoading(true);
       try {
-        const res = await fetch("/api/student/leaderboard");
+        const res = await fetch(`/api/student/leaderboard?subjectId=${selectedSubject}`);
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         setTopPerformers(data.top || []);
@@ -39,15 +57,30 @@ export default function LeaderboardPage() {
       }
     };
     fetchLeaderboard();
-  }, []);
+  }, [selectedSubject]);
 
   const hasData = topPerformers.length > 0 || bottomPerformers.length > 0;
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Leaderboard</h1>
-        <p className="text-slate-500 text-sm mt-1">Top 5 and Bottom 5 attendance performers in your class.</p>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Leaderboard</h1>
+          <p className="text-slate-500 text-sm mt-1">Top 5 and Bottom 5 attendance performers in your class.</p>
+        </div>
+        
+        {/* Subject Filter */}
+        <select
+          value={selectedSubject}
+          onChange={(e) => setSelectedSubject(e.target.value)}
+          className="border-slate-200 bg-white text-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm min-w-[200px]"
+        >
+          <option value="overall">Overall Attendance</option>
+          <option value="general">General (No Subject)</option>
+          {subjects.map(s => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
       </header>
 
       {/* My Rank Card */}

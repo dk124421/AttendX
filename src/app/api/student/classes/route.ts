@@ -55,9 +55,19 @@ export async function GET(req: Request) {
       }
     })
 
+    // Fetch attendance records for calendar view
+    const { data: attendanceRecords, error: attendanceError } = await supabase
+      .from('attendance')
+      .select('date, status, subject:subjects(name)')
+      .eq('student_id', student.id)
+      .eq('class_id', student.class_id)
+
+    if (attendanceError) throw attendanceError
+
     return NextResponse.json({
       class: student.class,
-      subjects: Array.from(subjectMap.values())
+      subjects: Array.from(subjectMap.values()),
+      attendance: attendanceRecords || []
     })
   } catch (error) {
     console.error(error)

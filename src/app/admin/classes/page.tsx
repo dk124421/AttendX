@@ -11,7 +11,6 @@ import toast from "react-hot-toast";
 export default function ClassesPage() {
   const [classes, setClasses] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
-  const [subjects, setSubjects] = useState<any[]>([]);
   const [allStudents, setAllStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -34,18 +33,15 @@ export default function ClassesPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resCls, resSubj, resProfiles, resStudents] = await Promise.all([
+      const [resCls, resProfiles, resStudents] = await Promise.all([
         fetch("/api/admin/classes"),
-        fetch("/api/admin/subjects"),
         fetch("/api/admin/teachers"),
         fetch("/api/admin/students"),
       ]);
       const dataCls = await resCls.json();
-      const dataSubj = await resSubj.json();
       const dataStudents = await resStudents.json();
 
       setClasses(dataCls);
-      setSubjects(dataSubj);
       setAllStudents(dataStudents);
 
       if (resProfiles.ok) {
@@ -64,16 +60,10 @@ export default function ClassesPage() {
   }, []);
 
   // Students available for assignment (unassigned or already in this class when editing)
+  // Show all students (any student can be assigned to any class)
   const availableStudents = useMemo(() => {
-    return allStudents.filter((s) => {
-      // Show students who are unassigned OR already in the class being edited
-      if (modalMode === "edit" && formData.id) {
-        return !s.class_id || s.class_id === formData.id;
-      }
-      // In create mode, only show unassigned students
-      return !s.class_id;
-    });
-  }, [allStudents, modalMode, formData.id]);
+    return allStudents;
+  }, [allStudents]);
 
   // Filtered students based on search
   const filteredStudents = useMemo(() => {
@@ -345,17 +335,14 @@ export default function ClassesPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Subject / Department</label>
-                    <select
+                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Subject Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Data Structures, Mathematics"
                       value={formData.department}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    >
-                      <option value="">Select Subject</option>
-                      {subjects.map((s: any) => (
-                        <option key={s.id} value={s.name}>{s.name} ({s.code})</option>
-                      ))}
-                    </select>
+                    />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Academic Year</label>

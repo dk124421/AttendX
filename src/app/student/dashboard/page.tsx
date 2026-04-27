@@ -55,8 +55,17 @@ export default function StudentDashboard() {
       // Refresh data when attendance is marked
       fetchDashboard();
     });
+
+    socket.on("admin_notification", (msg: any) => {
+      setNotifications((prev) => [
+        `[ADMIN]: ${msg.message}`,
+        ...prev.slice(0, 4),
+      ]);
+    });
+
     return () => {
       socket.off("attendance_updated");
+      socket.off("admin_notification");
     };
   }, []);
 

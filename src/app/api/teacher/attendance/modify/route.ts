@@ -13,7 +13,7 @@ export async function PUT(req: Request) {
   try {
     const { studentId, classId, subjectId, date, newStatus } = await req.json()
 
-    if (!studentId || !classId || !subjectId || !date || !newStatus) {
+    if (!studentId || !classId || !date || !newStatus) {
       return new NextResponse('Missing required fields', { status: 400 })
     }
 
@@ -29,14 +29,20 @@ export async function PUT(req: Request) {
     }
 
     // Update the attendance record
-    const { data, error } = await supabase
+    let query = supabase
       .from('attendance')
       .update({ status: newStatus })
       .eq('student_id', studentId)
       .eq('class_id', classId)
-      .eq('subject_id', subjectId)
       .eq('date', date)
-      .select()
+
+    if (subjectId) {
+      query = query.eq('subject_id', subjectId)
+    } else {
+      query = query.is('subject_id', null)
+    }
+
+    const { data, error } = await query.select()
 
     if (error) throw error
 
@@ -82,6 +88,8 @@ export async function GET(req: Request) {
 
     if (subjectId) {
       query = query.eq('subject_id', subjectId)
+    } else {
+      query = query.is('subject_id', null)
     }
 
     const { data, error } = await query
