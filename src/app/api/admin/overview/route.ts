@@ -99,13 +99,6 @@ export async function GET() {
       teacherName: (c as any).teacher?.user?.name || null,
     }))
 
-    // Get recent subjects list
-    const { data: recentSubjects } = await supabase
-      .from('subjects')
-      .select('id, name, code, sem, year')
-      .order('created_at', { ascending: false })
-      .limit(4)
-
     return NextResponse.json({
       totalStudents,
       totalTeachers,
@@ -113,7 +106,6 @@ export async function GET() {
       attendancePercentage,
       recentClasses: enrichedClasses,
       classAttendance,
-      recentSubjects: recentSubjects || [],
     })
   } catch (error) {
     console.error(error)

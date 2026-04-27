@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, UserPlus, X, Key, Eye, EyeOff, Edit2, Trash2, AlertTriangle } from "lucide-react";
+import { Search, UserPlus, X, Eye, EyeOff, Edit2, Trash2, AlertTriangle, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface CourseData {
@@ -34,6 +34,7 @@ export default function AdminStudentsPage() {
     branchId: "",
     year: "",
     contactEmail: "",
+    parentEmail: "priyalbaldwa10@gmail.com",
   });
 
   const [newPassword, setNewPassword] = useState("");
@@ -87,7 +88,7 @@ export default function AdminStudentsPage() {
       if (res.ok) {
         toast.success(`Student ${isEdit ? "updated" : "added"} successfully!`);
         setShowAddModal(false);
-        setFormData({ id: "", userId: "", name: "", enrollmentNumber: "", password: "", courseId: "", branchId: "", year: "", contactEmail: "" });
+        setFormData({ id: "", userId: "", name: "", enrollmentNumber: "", password: "", courseId: "", branchId: "", year: "", contactEmail: "", parentEmail: "priyalbaldwa10@gmail.com" });
         fetchData();
       } else {
         const errData = await res.text();
@@ -145,7 +146,7 @@ export default function AdminStudentsPage() {
         <button
           onClick={() => {
             setModalMode("add");
-            setFormData({ id: "", userId: "", name: "", enrollmentNumber: "", password: "", courseId: "", branchId: "", year: "", contactEmail: "" });
+            setFormData({ id: "", userId: "", name: "", enrollmentNumber: "", password: "", courseId: "", branchId: "", year: "", contactEmail: "", parentEmail: "priyalbaldwa10@gmail.com" });
             setShowAddModal(true);
           }}
           className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-200"
@@ -177,8 +178,8 @@ export default function AdminStudentsPage() {
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Student</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrollment No.</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Course</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Branch</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Year</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Parent Email</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
@@ -191,9 +192,8 @@ export default function AdminStudentsPage() {
                       <td className="px-6 py-4"><div className="h-10 w-40 bg-slate-100 rounded" /></td>
                       <td className="px-6 py-4"><div className="h-6 w-24 bg-slate-100 rounded" /></td>
                       <td className="px-6 py-4"><div className="h-6 w-20 bg-slate-100 rounded" /></td>
-                      <td className="px-6 py-4"><div className="h-6 w-24 bg-slate-100 rounded" /></td>
                       <td className="px-6 py-4"><div className="h-6 w-16 bg-slate-100 rounded" /></td>
-                      <td className="px-6 py-4"><div className="h-6 w-28 bg-slate-100 rounded" /></td>
+                      <td className="px-6 py-4"><div className="h-6 w-32 bg-slate-100 rounded" /></td>
                       <td className="px-6 py-4"><div className="h-8 w-24 bg-slate-100 ml-auto rounded" /></td>
                     </tr>
                   ))
@@ -223,13 +223,16 @@ export default function AdminStudentsPage() {
                         {student.course_id ? getCourseName(student.course_id) : "—"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.branch_id ? 'bg-purple-50 text-purple-700' : 'bg-slate-50 text-slate-400'}`}>
-                        {student.branch_id && student.course_id ? getBranchName(student.course_id, student.branch_id) : "—"}
-                      </span>
-                    </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {student.year || "—"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
+                        <Mail size={12} className="text-slate-400" />
+                        <span className="text-xs text-slate-500 truncate max-w-[160px]">
+                          {student.parent_email || "—"}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -246,6 +249,7 @@ export default function AdminStudentsPage() {
                               branchId: student.branch_id || "",
                               year: student.year || "",
                               contactEmail: student.contact_email || "",
+                              parentEmail: student.parent_email || "priyalbaldwa10@gmail.com",
                             });
                             setNewPassword("");
                             setShowAddModal(true);
@@ -289,7 +293,7 @@ export default function AdminStudentsPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-lg overflow-hidden rounded-[32px] bg-white p-8 shadow-2xl"
+              className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[32px] bg-white p-8 shadow-2xl"
             >
               <div className="mb-6 flex items-center justify-between">
                 <div>
@@ -388,7 +392,21 @@ export default function AdminStudentsPage() {
                     onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20"
                   />
-                  <p className="mt-1 text-[10px] text-slate-400">Used for attendance warnings & debarment alerts.</p>
+                </div>
+
+                {/* Parent Email */}
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Parent's Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. parent@gmail.com"
+                    value={formData.parentEmail}
+                    onChange={(e) => setFormData({ ...formData, parentEmail: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                  <p className="mt-1 text-[10px] text-slate-400">Default: priyalbaldwa10@gmail.com — Used for attendance notifications to parents.</p>
                 </div>
 
                 {/* Password (only for add mode) */}
@@ -492,8 +510,6 @@ export default function AdminStudentsPage() {
           </div>
         )}
       </AnimatePresence>
-
-
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>

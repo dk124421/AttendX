@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { name, enrollmentNumber, password, courseId, branchId, year, contactEmail } = await req.json()
+    const { name, enrollmentNumber, password, courseId, branchId, year, contactEmail, parentEmail } = await req.json()
 
     if (!name || !enrollmentNumber || !password) {
       return new NextResponse('Missing required fields', { status: 400 })
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       throw userError
     }
 
-    // 2. Create Student Profile with course, branch, year
+    // 2. Create Student Profile with course, branch, year, parent_email
     const studentInsert: any = {
       user_id: user.id,
       student_id: enrollmentNumber,
@@ -56,6 +56,7 @@ export async function POST(req: Request) {
     if (branchId) studentInsert.branch_id = branchId
     if (year) studentInsert.year = year
     if (contactEmail) studentInsert.contact_email = contactEmail
+    studentInsert.parent_email = parentEmail || 'priyalbaldwa10@gmail.com'
 
     const { error: studentError } = await supabase
       .from('students')
@@ -99,7 +100,7 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { id, userId, name, enrollmentNumber, courseId, branchId, year, contactEmail } = await req.json()
+    const { id, userId, name, enrollmentNumber, courseId, branchId, year, contactEmail, parentEmail } = await req.json()
 
     if (!id || !userId || !name || !enrollmentNumber) {
       return new NextResponse('Missing required fields', { status: 400 })
@@ -113,13 +114,14 @@ export async function PUT(req: Request) {
 
     if (userError) throw userError
 
-    // 2. Update Student Profile with course, branch, year
+    // 2. Update Student Profile with course, branch, year, parent_email
     const studentUpdate: any = {
       student_id: enrollmentNumber,
       course_id: courseId || null,
       branch_id: branchId || null,
       year: year || null,
       contact_email: contactEmail || null,
+      parent_email: parentEmail || 'priyalbaldwa10@gmail.com',
     }
 
     const { error: studentError } = await supabase
