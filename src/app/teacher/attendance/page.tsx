@@ -315,7 +315,7 @@ export default function TeacherAttendance() {
       {/* Shared Filters */}
       <div className="glass-card rounded-2xl p-5 space-y-4">
         {/* Filter Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
               Class
@@ -327,31 +327,6 @@ export default function TeacherAttendance() {
             >
               {classes.length === 0 && <option value="">No Classes Assigned</option>}
               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
-              Year
-            </label>
-            <select
-              value={selectedYear}
-              disabled
-              className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700 opacity-80"
-            >
-              <option value={selectedYear}>{selectedYear || "—"}</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
-              Subject
-            </label>
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full rounded-lg glass-input py-2 px-3 text-sm font-medium text-slate-700"
-            >
-              <option value="">-- No Subject --</option>
-              {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
             </select>
           </div>
           <div>

@@ -37,7 +37,6 @@ const menuItems = {
   TEACHER: [
     { name: "My Classes", icon: Layers, href: "/teacher" },
     { name: "Attendance", icon: ClipboardCheck, href: "/teacher/attendance" },
-    { name: "Reports", icon: BarChart3, href: "/teacher/reports" },
     { name: "Leaderboard", icon: Trophy, href: "/teacher/leaderboard" },
     { name: "Calendar", icon: CalendarDays, href: "/teacher/calendar" },
   ],
