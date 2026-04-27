@@ -18,7 +18,7 @@ export default async function TeacherLayout({
   return (
     <div className="flex h-screen bg-transparent overflow-hidden">
       <Sidebar role="TEACHER" />
-      <main className="flex-1 overflow-y-auto px-8 py-8 transition-all duration-300 relative z-10">
+      <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-8 pb-20 md:pb-8 transition-all duration-300 relative z-10">
         <div className="mx-auto max-w-7xl">
           <TopHeader />
           {children}

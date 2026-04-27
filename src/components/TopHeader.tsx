@@ -27,20 +27,25 @@ export default function TopHeader() {
   else if (pathname.includes("/admin/classes") || pathname.includes("/teacher/classes"))
     title = "Classes";
   else if (pathname.includes("/admin/subjects")) title = "Subjects";
-  else if (pathname.includes("/teacher/attendance")) title = "Teacher Attendance Panel";
+  else if (pathname.includes("/admin/calendar")) title = "Academic Calendar";
+  else if (pathname.includes("/admin/courses")) title = "Courses & Branches";
+  else if (pathname.includes("/teacher/attendance")) title = "Mark Attendance";
   else if (pathname.includes("/teacher/reports")) title = "Attendance Reports";
+  else if (pathname.includes("/teacher/calendar")) title = "Academic Calendar";
+  else if (pathname.includes("/teacher/leaderboard")) title = "Leaderboard";
   else if (pathname.includes("/student/attendance")) title = "My Attendance";
-  else if (pathname.includes("/student/leaderboard")) title = "Leaderboard Screen";
+  else if (pathname.includes("/student/leaderboard")) title = "Leaderboard";
   else if (pathname.includes("/student/students")) title = "Students";
   else if (pathname.includes("/student/classes")) title = "My Classes";
+  else if (pathname.includes("/student/calendar")) title = "Academic Calendar";
   else if (pathname.includes("/student/reports")) title = "Reports Page";
   else if (pathname.includes("/admin/analytics")) title = "Analytics Dashboard";
   else if (pathname.includes("/admin")) title = "Dashboard";
-  else if (pathname.includes("/teacher")) title = "Teacher Attendance Panel";
+  else if (pathname.includes("/teacher")) title = "My Classes";
   else if (pathname.includes("/student")) title = "Student Dashboard";
 
   return (
-    <header className="mb-6 flex items-center justify-between">
+    <header className="mb-6 flex items-center justify-between ml-12 md:ml-0">
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-bold text-slate-900 tracking-tight">
           {title}

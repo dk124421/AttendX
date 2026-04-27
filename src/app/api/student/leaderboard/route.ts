@@ -21,8 +21,14 @@ export async function GET(req: Request) {
       .eq('user_id', session.user.id)
       .single()
 
-    if (studentError || !student || !student.class_id) {
-      return NextResponse.json({ top: [], bottom: [], myRank: null })
+    if (studentError || !student) {
+      console.error('[STUDENT LEADERBOARD] Student profile not found:', studentError)
+      return NextResponse.json({ top: [], bottom: [], myRank: null, error: 'Student profile not found' })
+    }
+
+    if (!student.class_id) {
+      console.warn('[STUDENT LEADERBOARD] Student has no class assigned:', student.id)
+      return NextResponse.json({ top: [], bottom: [], myRank: null, error: 'You are not assigned to any class yet' })
     }
 
     const classId = student.class_id
@@ -69,7 +75,7 @@ export async function GET(req: Request) {
 
     const results = classmates.map((s: any) => {
       const stats = statsMap[s.id] || { total: 0, present: 0 }
-      const percentage = stats.total > 0 ? Math.round((stats.present / stats.total) * 1000) / 10 : 0
+      const percentage = stats.total > 0 ? Math.round((stats.present / stats.total) * 100 * 10) / 10 : 0
       return {
         id: s.id,
         studentId: s.student_id,
@@ -95,7 +101,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ top, bottom, myRank: myEntry })
   } catch (error) {
-    console.error(error)
+    console.error('[STUDENT LEADERBOARD] Error:', error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
