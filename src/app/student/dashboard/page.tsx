@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Flame, Bell, TrendingUp, CalendarCheck, CheckCircle, XCircle, BookOpen, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Flame, Bell, TrendingUp, CalendarCheck, CheckCircle, XCircle, BookOpen, AlertTriangle, ShieldAlert, Layers } from "lucide-react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler } from "chart.js";
 import { Doughnut, Line } from "react-chartjs-2";
 import socket from "@/lib/socketClient";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
 
-interface SubjectProgress {
-  subject: string;
+interface ClassProgress {
+  className: string;
   totalClasses: number;
   attendedClasses: number;
   percentage: number;
@@ -23,7 +23,7 @@ interface TodayAttendance {
 interface DashboardData {
   overallPercentage: number;
   currentStreak: number;
-  subjectProgress: SubjectProgress[];
+  classProgress: ClassProgress[];
   todayAttendance: TodayAttendance[];
   todayPercentage: number;
 }
@@ -87,7 +87,7 @@ export default function StudentDashboard() {
   const streak = data?.currentStreak ?? 0;
   const todayPct = data?.todayPercentage ?? 0;
   const todayAttendance = data?.todayAttendance ?? [];
-  const subjectProgress = data?.subjectProgress ?? [];
+  const classProgress = data?.classProgress ?? [];
 
   // Doughnut data
   const doughnutData = {
@@ -302,52 +302,52 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Bottom — Subject Progress with Total/Attended counts */}
+      {/* Bottom — Class Progress with Total/Attended counts */}
       <div className="glass-card rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-4">
-          <BookOpen size={15} className="text-blue-500" />
+          <Layers size={15} className="text-blue-500" />
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-            Subject Progress
+            Class Progress
           </span>
         </div>
-        {subjectProgress.length === 0 && !loading ? (
-          <p className="text-sm text-slate-400 text-center py-6">No subject data available yet.</p>
+        {classProgress.length === 0 && !loading ? (
+          <p className="text-sm text-slate-400 text-center py-6">No class data available yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-slate-200/50">
-                  <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Subject</th>
+                  <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Class</th>
                   <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Total Classes</th>
                   <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Attended</th>
                   <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Progress</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50">
-                {subjectProgress.map((s, idx) => (
-                  <tr key={s.subject} className="hover:bg-white/30 transition-colors">
+                {classProgress.map((c, idx) => (
+                  <tr key={c.className} className="hover:bg-white/30 transition-colors">
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className={`h-2.5 w-2.5 rounded-full ${progressColors[idx % progressColors.length]}`} />
-                        <span className="text-sm font-semibold text-slate-700">{s.subject}</span>
+                        <span className="text-sm font-semibold text-slate-700">{c.className}</span>
                       </div>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <span className="text-sm font-bold text-slate-600">{s.totalClasses}</span>
+                      <span className="text-sm font-bold text-slate-600">{c.totalClasses}</span>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <span className="text-sm font-bold text-emerald-600">{s.attendedClasses}</span>
+                      <span className="text-sm font-bold text-emerald-600">{c.attendedClasses}</span>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-2 bg-slate-200/50 rounded-full overflow-hidden">
                           <div
                             className={`h-full ${progressColors[idx % progressColors.length]} rounded-full transition-all duration-700`}
-                            style={{ width: `${Math.round(s.percentage)}%` }}
+                            style={{ width: `${Math.round(c.percentage)}%` }}
                           />
                         </div>
                         <span className="text-xs font-bold text-slate-500 w-10 text-right">
-                          {Math.round(s.percentage)}%
+                          {Math.round(c.percentage)}%
                         </span>
                       </div>
                     </td>

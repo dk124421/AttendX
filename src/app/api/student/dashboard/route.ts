@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   try {
     const { data: student, error: studentError } = await supabase
       .from('students')
-      .select('*')
+      .select('*, class:classes(id, name, department, year)')
       .eq('user_id', session.user.id)
       .single()
 
@@ -23,7 +23,8 @@ export async function GET(req: Request) {
       .from('attendance')
       .select(`
         *,
-        subject:subjects(name)
+        subject:subjects(name),
+        class:classes(id, name)
       `)
       .eq('student_id', student.id)
       .order('date', { ascending: true })
@@ -35,24 +36,25 @@ export async function GET(req: Request) {
     const presentClasses = attendances.filter((a: any) => a.status === 'PRESENT').length
     const overallPercentage = totalClasses > 0 ? (presentClasses / totalClasses) * 100 : 0
 
-    // Group by subject for progress with totalClasses and attendedClasses
-    const subjectStats: Record<string, { total: number; present: number }> = {}
+    // Group by class for class progress
+    const classStats: Record<string, { name: string; total: number; present: number }> = {}
     attendances.forEach((record: any) => {
-      const subjectName = record.subject.name
-      if (!subjectStats[subjectName]) {
-        subjectStats[subjectName] = { total: 0, present: 0 }
+      const className = record.class?.name || 'Unknown Class'
+      const classId = record.class_id
+      if (!classStats[classId]) {
+        classStats[classId] = { name: className, total: 0, present: 0 }
       }
-      subjectStats[subjectName].total++
+      classStats[classId].total++
       if (record.status === 'PRESENT') {
-        subjectStats[subjectName].present++
+        classStats[classId].present++
       }
     })
 
-    const subjectProgress = Object.keys(subjectStats).map(subject => ({
-      subject,
-      totalClasses: subjectStats[subject].total,
-      attendedClasses: subjectStats[subject].present,
-      percentage: (subjectStats[subject].present / subjectStats[subject].total) * 100
+    const classProgress = Object.keys(classStats).map(classId => ({
+      className: classStats[classId].name,
+      totalClasses: classStats[classId].total,
+      attendedClasses: classStats[classId].present,
+      percentage: (classStats[classId].present / classStats[classId].total) * 100
     }))
 
     // Today's attendance
@@ -78,7 +80,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       overallPercentage: Math.round(overallPercentage),
       currentStreak: student.current_streak,
-      subjectProgress,
+      classProgress,
       todayAttendance,
       todayPercentage,
       recentAttendances: attendances.slice(-5)

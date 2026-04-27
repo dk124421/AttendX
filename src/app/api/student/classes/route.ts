@@ -27,48 +27,48 @@ export async function GET(req: Request) {
       return new NextResponse('Student profile not found', { status: 404 })
     }
 
-    // Get subjects assigned to this class via TeacherAssignment
-    const { data: assignments, error: assignError } = await supabase
-      .from('teacher_assignments')
-      .select(`
-        id,
-        subject:subjects(id, name, code),
-        teacher:teachers(
-          id,
-          user:users(name)
-        )
-      `)
-      .eq('class_id', student.class_id)
+    // Build the list of classes the student is in
+    const classes: any[] = []
+    if (student.class) {
+      // student.class could be a single object or array depending on schema
+      const cls = Array.isArray(student.class) ? student.class : [student.class]
+      classes.push(...cls)
+    }
 
-    if (assignError) throw assignError
-
-    // De-duplicate subjects (same subject might be assigned to different teachers)
-    const subjectMap = new Map()
-    assignments?.forEach((a: any) => {
-      if (a.subject && !subjectMap.has(a.subject.id)) {
-        subjectMap.set(a.subject.id, {
-          id: a.subject.id,
-          name: a.subject.name,
-          code: a.subject.code,
-          teacher: a.teacher?.user?.name || 'Unassigned'
-        })
-      }
-    })
-
-    // Fetch attendance records for calendar view
+    // Fetch attendance records for this student across all their classes
     const { data: attendanceRecords, error: attendanceError } = await supabase
       .from('attendance')
-      .select('date, status, subject:subjects(name)')
+      .select('date, status, class_id, subject:subjects(name)')
       .eq('student_id', student.id)
-      .eq('class_id', student.class_id)
 
     if (attendanceError) throw attendanceError
 
-    return NextResponse.json({
-      class: student.class,
-      subjects: Array.from(subjectMap.values()),
-      attendance: attendanceRecords || []
+    // Group attendance by class_id
+    const attendanceByClass: Record<string, any[]> = {}
+    ;(attendanceRecords || []).forEach((record: any) => {
+      const cid = record.class_id
+      if (!attendanceByClass[cid]) {
+        attendanceByClass[cid] = []
+      }
+      attendanceByClass[cid].push({
+        date: record.date,
+        status: record.status,
+        subject: record.subject?.name || null
+      })
     })
+
+    // Build response with each class and its attendance
+    const result = classes.map((cls: any) => ({
+      id: cls.id,
+      name: cls.name,
+      department: cls.department,
+      year: cls.year,
+      attendance: attendanceByClass[cls.id] || [],
+      totalClasses: (attendanceByClass[cls.id] || []).length,
+      presentClasses: (attendanceByClass[cls.id] || []).filter((a: any) => a.status === 'PRESENT').length,
+    }))
+
+    return NextResponse.json({ classes: result })
   } catch (error) {
     console.error(error)
     return new NextResponse('Internal Error', { status: 500 })
