@@ -12,7 +12,7 @@ import {
   GraduationCap,
   BarChart3,
   UserCircle,
-  FlaskConical,
+
   Layers,
   CalendarDays,
   Menu,
@@ -30,7 +30,7 @@ const menuItems = {
     { name: "Students", icon: GraduationCap, href: "/admin/students" },
     { name: "Teachers", icon: UserCircle, href: "/admin/teachers" },
     { name: "Classes", icon: Layers, href: "/admin/classes" },
-    { name: "Subjects", icon: FlaskConical, href: "/admin/subjects" },
+
     { name: "Courses", icon: BookOpen, href: "/admin/courses" },
     { name: "Calendar", icon: CalendarDays, href: "/admin/calendar" },
   ],

@@ -273,7 +273,7 @@ export default function ClassesPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute bottom-6 right-6 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => openEditModal(cls)}
                   className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"
