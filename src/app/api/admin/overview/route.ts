@@ -43,7 +43,6 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(4)
 
-<<<<<<< HEAD
     // ── Class-wise today's attendance stats ──
     const { data: allClasses } = await supabase
       .from('classes')
@@ -68,8 +67,6 @@ export async function GET() {
         const classStudents = allStudents?.filter((s: any) => s.class_id === cls.id) || []
         const classRecords = todayAll?.filter((r: any) => r.class_id === cls.id) || []
         const presentCount = classRecords.filter((r: any) => r.status === 'PRESENT').length
-        // Get unique students who had attendance marked today
-        const uniqueStudentsMarked = new Set(classRecords.map((r: any) => r.student_id)).size
         return {
           id: cls.id,
           name: cls.name,
@@ -78,7 +75,7 @@ export async function GET() {
         }
       })
     }
-=======
+
     // Get student counts per class
     const classIds = (recentClasses || []).map(c => c.id)
     let classCounts: Record<string, number> = {}
@@ -108,20 +105,15 @@ export async function GET() {
       .select('id, name, code, sem, year')
       .order('created_at', { ascending: false })
       .limit(4)
->>>>>>> a49a31928021f612845626652408e5e0c8112ad0
 
     return NextResponse.json({
       totalStudents,
       totalTeachers,
       totalClasses,
       attendancePercentage,
-<<<<<<< HEAD
-      recentClasses: recentClasses || [],
-      classAttendance,
-=======
       recentClasses: enrichedClasses,
+      classAttendance,
       recentSubjects: recentSubjects || [],
->>>>>>> a49a31928021f612845626652408e5e0c8112ad0
     })
   } catch (error) {
     console.error(error)

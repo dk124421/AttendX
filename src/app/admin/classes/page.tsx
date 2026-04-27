@@ -59,13 +59,6 @@ export default function ClassesPage() {
     fetchData();
   }, []);
 
-<<<<<<< HEAD
-  // Students available for assignment (unassigned or already in this class when editing)
-  // Show all students (any student can be assigned to any class)
-  const availableStudents = useMemo(() => {
-    return allStudents;
-  }, [allStudents]);
-=======
   // Students available for assignment (show all students, mark already-assigned ones)
   const availableStudents = useMemo(() => {
     return allStudents.filter((s) => {
@@ -77,7 +70,6 @@ export default function ClassesPage() {
       return true;
     });
   }, [allStudents, modalMode, formData.id]);
->>>>>>> a49a31928021f612845626652408e5e0c8112ad0
 
   // Filtered students based on search
   const filteredStudents = useMemo(() => {

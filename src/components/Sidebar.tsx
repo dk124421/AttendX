@@ -29,14 +29,6 @@ const menuItems = {
     { name: "Dashboard", icon: LayoutDashboard, href: "/admin" },
     { name: "Students", icon: GraduationCap, href: "/admin/students" },
     { name: "Teachers", icon: UserCircle, href: "/admin/teachers" },
-<<<<<<< HEAD
-    { name: "Classes", icon: BookOpen, href: "/admin/classes" },
-    { name: "Analytics", icon: BarChart3, href: "/admin/analytics" },
-  ],
-  TEACHER: [
-    { name: "Attendance", icon: ClipboardCheck, href: "/teacher" },
-    { name: "Debarred", icon: BarChart3, href: "/teacher/reports" },
-=======
     { name: "Classes", icon: Layers, href: "/admin/classes" },
     { name: "Subjects", icon: FlaskConical, href: "/admin/subjects" },
     { name: "Courses", icon: BookOpen, href: "/admin/courses" },
@@ -46,18 +38,13 @@ const menuItems = {
     { name: "My Classes", icon: Layers, href: "/teacher" },
     { name: "Attendance", icon: ClipboardCheck, href: "/teacher/attendance" },
     { name: "Reports", icon: BarChart3, href: "/teacher/reports" },
->>>>>>> a49a31928021f612845626652408e5e0c8112ad0
     { name: "Leaderboard", icon: Trophy, href: "/teacher/leaderboard" },
     { name: "Calendar", icon: CalendarDays, href: "/teacher/calendar" },
   ],
   STUDENT: [
     { name: "Dashboard", icon: LayoutDashboard, href: "/student" },
-<<<<<<< HEAD
-    { name: "Classes", icon: BookOpen, href: "/student/classes" },
-=======
     { name: "Students", icon: Users, href: "/student/students" },
     { name: "Classes", icon: Layers, href: "/student/classes" },
->>>>>>> a49a31928021f612845626652408e5e0c8112ad0
     { name: "Leaderboard", icon: Trophy, href: "/student/leaderboard" },
     { name: "Calendar", icon: CalendarDays, href: "/student/calendar" },
   ],
