@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Flame, Bell, TrendingUp, CalendarCheck, CheckCircle, XCircle, BookOpen, AlertTriangle, ShieldAlert, Layers } from "lucide-react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler } from "chart.js";
 import { Doughnut, Line } from "react-chartjs-2";
-import socket from "@/lib/socketClient";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
 
@@ -42,32 +41,24 @@ const progressColors = [
 export default function StudentDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboard();
-
-    socket.on("attendance_updated", (evt: any) => {
-      setNotifications((prev) => [
-        `Attendance marked for ${evt.subject || "a class"} at ${evt.timeStamp || "now"}`,
-        ...prev.slice(0, 4),
-      ]);
-      // Refresh data when attendance is marked
-      fetchDashboard();
-    });
-
-    socket.on("admin_notification", (msg: any) => {
-      setNotifications((prev) => [
-        `[ADMIN]: ${msg.message}`,
-        ...prev.slice(0, 4),
-      ]);
-    });
-
-    return () => {
-      socket.off("attendance_updated");
-      socket.off("admin_notification");
-    };
+    fetchNotifications();
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("/api/student/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
+    } catch {
+      // silent
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -244,19 +235,28 @@ export default function StudentDashboard() {
           <div className="flex items-center gap-2 mb-3">
             <Bell size={15} className="text-blue-500" />
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-              Notifications
+              Alerts
             </span>
           </div>
           <div className="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
-            {notifications.map((n, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-2 text-xs text-slate-600"
-              >
-                <div className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 bg-blue-500" />
-                <span>{n}</span>
-              </div>
-            ))}
+            {notifications.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-2">No alerts yet</p>
+            ) : (
+              notifications.slice(0, 5).map((n: any) => (
+                <div
+                  key={n.id}
+                  className={`flex items-start gap-2 text-xs ${!n.read ? 'text-slate-800 font-semibold' : 'text-slate-500'}`}
+                >
+                  <div className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${!n.read ? 'bg-indigo-500' : 'bg-slate-300'}`} />
+                  <div>
+                    <span>{n.title || n.message}</span>
+                    {n.message && n.title && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">{n.message}</p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

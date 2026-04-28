@@ -158,9 +158,6 @@ export default function TopHeader() {
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
-            {!isStudent && (
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
-            )}
           </button>
 
           {/* Notification Panel */}

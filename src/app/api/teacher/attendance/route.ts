@@ -27,32 +27,63 @@ export async function POST(req: Request) {
 
     if (teacherError || !teacher) return new NextResponse('Teacher profile not found', { status: 404 })
 
-    const dateObj = new Date(date)
+    // Normalize date to a plain date string (YYYY-MM-DD) stored at midnight UTC
+    const dateStr = new Date(date).toISOString().split('T')[0]
+    const normalizedDate = `${dateStr}T00:00:00.000Z`
 
-    // Using Upsert for multiple records
-    const { data: records, error: upsertError } = await supabase
-      .from('attendance')
-      .upsert(
-        attendanceData.map((record: any) => ({
-          student_id: record.studentId,
-          class_id: classId,
-          subject_id: subjectId || null,
-          teacher_id: teacher.id,
-          date: dateObj.toISOString(),
-          status: record.status,
-        })),
-        { onConflict: 'student_id,class_id,subject_id,date' }
-      )
-      .select()
+    // For each student, check if a record already exists for this class+date+subject
+    // If it exists, update it. If not, insert a new one.
+    // This avoids the NULL subject_id upsert problem in Postgres.
+    const results = []
+    for (const record of attendanceData) {
+      let query = supabase
+        .from('attendance')
+        .select('id')
+        .eq('student_id', record.studentId)
+        .eq('class_id', classId)
+        .gte('date', `${dateStr}T00:00:00.000Z`)
+        .lte('date', `${dateStr}T23:59:59.999Z`)
 
-    if (upsertError) throw upsertError
+      if (subjectId) {
+        query = query.eq('subject_id', subjectId)
+      } else {
+        query = query.is('subject_id', null)
+      }
+
+      const { data: existing } = await query
+
+      if (existing && existing.length > 0) {
+        // Update existing record
+        const { data: updated, error } = await supabase
+          .from('attendance')
+          .update({ status: record.status, teacher_id: teacher.id })
+          .eq('id', existing[0].id)
+          .select()
+        if (error) throw error
+        if (updated) results.push(updated[0])
+      } else {
+        // Insert new record
+        const { data: inserted, error } = await supabase
+          .from('attendance')
+          .insert({
+            student_id: record.studentId,
+            class_id: classId,
+            subject_id: subjectId || null,
+            teacher_id: teacher.id,
+            date: normalizedDate,
+            status: record.status,
+          })
+          .select()
+        if (error) throw error
+        if (inserted) results.push(inserted[0])
+      }
+    }
 
     // Calculate streaks for impacted students
     for (const record of attendanceData) {
       if (record.status === 'PRESENT') {
         const { error: updateError } = await supabase.rpc('increment_streak', { student_id_param: record.studentId })
         if (updateError) {
-          // If RPC fails, try manual update as fallback
           const { data: student } = await supabase.from('students').select('current_streak').eq('id', record.studentId).single()
           await supabase.from('students').update({ current_streak: (student?.current_streak || 0) + 1 }).eq('id', record.studentId)
         }
@@ -62,6 +93,7 @@ export async function POST(req: Request) {
     }
 
     // ──── Trigger attendance alerts asynchronously (fire-and-forget) ────
+    const dateObj = new Date(date)
     const currentMonth = dateObj.getMonth() + 1
     const currentYear = dateObj.getFullYear()
 
@@ -70,7 +102,6 @@ export async function POST(req: Request) {
       .map((r: any) => r.studentId)
 
     if (absentStudentIds.length > 0) {
-      // Run alert checks in background — don't await, don't block response
       Promise.allSettled(
         absentStudentIds.flatMap((studentId: string) => [
           checkConsecutiveAbsences(studentId),
@@ -84,7 +115,7 @@ export async function POST(req: Request) {
       })
     }
     
-    return NextResponse.json({ message: 'Attendance recorded successfully', count: records?.length || 0 })
+    return NextResponse.json({ message: 'Attendance recorded successfully', count: results.length })
   } catch (error) {
     console.error(error)
     return new NextResponse('Internal Error', { status: 500 })

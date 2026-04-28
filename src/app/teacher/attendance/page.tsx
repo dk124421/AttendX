@@ -603,6 +603,52 @@ export default function TeacherAttendance() {
       </div>
     )
   }
+
+  {/* Mark All Present Button */ }
+  {
+    pastRecords.length > 0 && (
+      <div className="flex justify-end pt-3 border-t border-slate-100">
+        <button
+          onClick={async () => {
+            const absentRecords = pastRecords.filter(r => r.status === "ABSENT");
+            if (absentRecords.length === 0) {
+              toast("All students are already marked Present!", { icon: "✅" });
+              return;
+            }
+            setModifying(true);
+            try {
+              for (const record of absentRecords) {
+                await fetch("/api/teacher/attendance/modify", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    studentId: record.student_id,
+                    classId: record.class_id,
+                    subjectId: record.subject_id,
+                    date: record.date,
+                    newStatus: "PRESENT",
+                  }),
+                });
+              }
+              setPastRecords(prev =>
+                prev.map(r => ({ ...r, status: "PRESENT" }))
+              );
+              toast.success(`${absentRecords.length} student(s) marked Present!`);
+            } catch {
+              toast.error("Failed to update some records");
+            } finally {
+              setModifying(false);
+            }
+          }}
+          disabled={modifying || pastRecords.every(r => r.status === "PRESENT")}
+          className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-emerald-200"
+        >
+          <CheckCircle size={15} />
+          {modifying ? "Updating..." : "Mark All Present"}
+        </button>
+      </div>
+    )
+  }
         </div >
       )
 }

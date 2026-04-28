@@ -27,8 +27,8 @@ export async function GET() {
     const { data: todayRecords } = await supabase
       .from('attendance')
       .select('status')
-      .gte('created_at', `${today}T00:00:00`)
-      .lte('created_at', `${today}T23:59:59`)
+      .gte('date', `${today}T00:00:00`)
+      .lte('date', `${today}T23:59:59`)
 
     let attendancePercentage = 0
     if (todayRecords && todayRecords.length > 0) {
@@ -51,43 +51,53 @@ export async function GET() {
     let classAttendance: { id: string; name: string; present: number; total: number }[] = []
 
     if (allClasses && allClasses.length > 0) {
-      // Get total students per class
-      const { data: allStudents } = await supabase
-        .from('students')
-        .select('id, class_id')
+      // Get total students per class using class_students junction table
+      const { data: classStudentLinks } = await supabase
+        .from('class_students')
+        .select('class_id, student_id')
 
       // Get today's attendance records
       const { data: todayAll } = await supabase
         .from('attendance')
         .select('student_id, class_id, status')
-        .gte('created_at', `${today}T00:00:00`)
-        .lte('created_at', `${today}T23:59:59`)
+        .gte('date', `${today}T00:00:00`)
+        .lte('date', `${today}T23:59:59`)
 
       classAttendance = allClasses.map((cls: any) => {
-        const classStudents = allStudents?.filter((s: any) => s.class_id === cls.id) || []
+        const classStudentCount = classStudentLinks?.filter((cs: any) => cs.class_id === cls.id).length || 0
         const classRecords = todayAll?.filter((r: any) => r.class_id === cls.id) || []
-        const presentCount = classRecords.filter((r: any) => r.status === 'PRESENT').length
+        
+        // Deduplicate by student_id — count each student only once
+        const studentStatusMap = new Map<string, string>()
+        classRecords.forEach((r: any) => {
+          // If a student has any PRESENT record, mark them present
+          if (!studentStatusMap.has(r.student_id) || r.status === 'PRESENT') {
+            studentStatusMap.set(r.student_id, r.status)
+          }
+        })
+        
+        const presentCount = Array.from(studentStatusMap.values()).filter(s => s === 'PRESENT').length
         return {
           id: cls.id,
           name: cls.name,
           present: presentCount,
-          total: classStudents.length,
+          total: classStudentCount,
         }
       })
     }
 
-    // Get student counts per class
+    // Get student counts per class using class_students junction table
     const classIds = (recentClasses || []).map(c => c.id)
     let classCounts: Record<string, number> = {}
     if (classIds.length > 0) {
-      const { data: students } = await supabase
-        .from('students')
+      const { data: csLinks } = await supabase
+        .from('class_students')
         .select('class_id')
         .in('class_id', classIds)
 
-      for (const s of (students || [])) {
-        if (s.class_id) {
-          classCounts[s.class_id] = (classCounts[s.class_id] || 0) + 1
+      for (const cs of (csLinks || [])) {
+        if (cs.class_id) {
+          classCounts[cs.class_id] = (classCounts[cs.class_id] || 0) + 1
         }
       }
     }

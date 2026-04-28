@@ -142,7 +142,6 @@ export default function AdminTeachersPage() {
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Teacher</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">ID Number</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned Classes</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Subjects</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
@@ -154,7 +153,6 @@ export default function AdminTeachersPage() {
                       <tr key={i} className="animate-pulse">
                         <td className="px-6 py-4"><div className="h-10 w-40 bg-slate-100 rounded" /></td>
                         <td className="px-6 py-4"><div className="h-6 w-24 bg-slate-100 rounded" /></td>
-                        <td className="px-6 py-4"><div className="h-6 w-32 bg-slate-100 rounded" /></td>
                         <td className="px-6 py-4"><div className="h-6 w-32 bg-slate-100 rounded" /></td>
                         <td className="px-6 py-4"><div className="h-8 w-24 bg-slate-100 ml-auto rounded" /></td>
                       </tr>
@@ -193,19 +191,7 @@ export default function AdminTeachersPage() {
                           <span className="text-xs text-slate-400 italic">No classes assigned</span>
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        {teacher.assignedSubjects && teacher.assignedSubjects.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5">
-                            {teacher.assignedSubjects.map((sub: any) => (
-                              <span key={sub.id} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-semibold border border-purple-100">
-                                {sub.name}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">No subjects</span>
-                        )}
-                      </td>
+
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button

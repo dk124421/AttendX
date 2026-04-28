@@ -23,7 +23,6 @@ export async function GET(req: Request) {
       .from('attendance')
       .select(`
         *,
-        subject:subjects(name),
         class:classes(id, name)
       `)
       .eq('student_id', student.id)
@@ -54,7 +53,9 @@ export async function GET(req: Request) {
       className: classStats[classId].name,
       totalClasses: classStats[classId].total,
       attendedClasses: classStats[classId].present,
-      percentage: (classStats[classId].present / classStats[classId].total) * 100
+      percentage: classStats[classId].total > 0
+        ? (classStats[classId].present / classStats[classId].total) * 100
+        : 0
     }))
 
     // Today's attendance
@@ -69,7 +70,7 @@ export async function GET(req: Request) {
         return d >= today && d <= todayEnd
       })
       .map((a: any) => ({
-        subject: a.subject.name,
+        subject: a.class?.name || 'Class',
         status: a.status
       }))
 
@@ -77,9 +78,55 @@ export async function GET(req: Request) {
     const todayTotal = todayAttendance.length
     const todayPercentage = todayTotal > 0 ? Math.round((todayPresent / todayTotal) * 100) : 0
 
+    // ── Calculate Real Streak ──
+    // Group attendance by date, check consecutive days with at least one PRESENT
+    const dateMap: Record<string, boolean> = {}
+    attendances.forEach((a: any) => {
+      const dateStr = new Date(a.date).toISOString().split('T')[0]
+      if (a.status === 'PRESENT') {
+        dateMap[dateStr] = true
+      } else if (!(dateStr in dateMap)) {
+        dateMap[dateStr] = false
+      }
+    })
+
+    // Count consecutive present days going back from today
+    let currentStreak = 0
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    
+    // Start from today and go backwards
+    for (let i = 0; i < 365; i++) {
+      const checkDate = new Date(now)
+      checkDate.setDate(checkDate.getDate() - i)
+      const dateStr = checkDate.toISOString().split('T')[0]
+      
+      if (dateMap[dateStr] === true) {
+        currentStreak++
+      } else if (dateMap[dateStr] === false) {
+        // There was attendance taken but student was absent → break streak
+        break
+      } else {
+        // No attendance records for this day
+        // If it's today and no records yet, skip (don't break streak)
+        if (i === 0) continue
+        // For past days with no records (could be weekend/holiday), skip
+        // But if we've already started counting, break after 2 consecutive empty days
+        const prevDate = new Date(now)
+        prevDate.setDate(prevDate.getDate() - i - 1)
+        const prevStr = prevDate.toISOString().split('T')[0]
+        if (!(prevStr in dateMap)) {
+          // Two consecutive days with no records — likely a gap, stop counting
+          break
+        }
+        // Single day gap (weekend/holiday) — continue
+        continue
+      }
+    }
+
     return NextResponse.json({
       overallPercentage: Math.round(overallPercentage),
-      currentStreak: student.current_streak,
+      currentStreak,
       classProgress,
       todayAttendance,
       todayPercentage,

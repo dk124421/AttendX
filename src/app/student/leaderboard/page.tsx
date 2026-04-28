@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Medal, Award, TrendingUp, TrendingDown, Users, Star, Loader2, BarChart3 } from "lucide-react";
+import { Trophy, Medal, Award, TrendingUp, TrendingDown, Users, Star, Loader2, BarChart3, Layers, GraduationCap } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface LeaderboardEntry {
@@ -17,36 +17,60 @@ interface LeaderboardEntry {
   isMe?: boolean;
 }
 
+interface ClassOption {
+  id: string;
+  name: string;
+}
+
+interface CourseOption {
+  id: string;
+  name: string;
+}
+
 export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [topPerformers, setTopPerformers] = useState<LeaderboardEntry[]>([]);
   const [bottomPerformers, setBottomPerformers] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<LeaderboardEntry | null>(null);
   
-  // Subject filter
-  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState<string>("overall");
+  // Filter options
+  const [myClasses, setMyClasses] = useState<ClassOption[]>([]);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
+  
+  // Filter state
+  const [filterType, setFilterType] = useState<"class" | "course">("class");
+  const [filterId, setFilterId] = useState<string>("");
+  
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Fetch filter options (classes and courses)
   useEffect(() => {
-    const fetchSubjects = async () => {
+    const fetchOptions = async () => {
       try {
         const res = await fetch("/api/student/classes");
         if (res.ok) {
           const data = await res.json();
-          setSubjects(data.subjects || []);
+          const classList = (data.classes || []).map((c: any) => ({ id: c.id, name: c.name }));
+          setMyClasses(classList);
+          setCourses(data.courses || []);
+          // Default to first class
+          if (classList.length > 0) {
+            setFilterId(classList[0].id);
+          }
         }
       } catch {}
     };
-    fetchSubjects();
+    fetchOptions();
   }, []);
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+  // Fetch leaderboard when filter changes
   useEffect(() => {
+    if (!filterId) return;
     const fetchLeaderboard = async () => {
       setLoading(true);
+      setErrorMessage(null);
       try {
-        const res = await fetch(`/api/student/leaderboard?subjectId=${selectedSubject}`);
+        const res = await fetch(`/api/student/leaderboard?filterType=${filterType}&filterId=${filterId}`);
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         setTopPerformers(data.top || []);
@@ -62,7 +86,7 @@ export default function LeaderboardPage() {
       }
     };
     fetchLeaderboard();
-  }, [selectedSubject]);
+  }, [filterType, filterId]);
 
   const hasData = topPerformers.length > 0 || bottomPerformers.length > 0;
 
@@ -71,21 +95,60 @@ export default function LeaderboardPage() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Leaderboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Top 5 and Bottom 5 attendance performers in your class.</p>
+          <p className="text-slate-500 text-sm mt-1">Top 5 and Bottom 5 attendance performers.</p>
         </div>
         
-        {/* Subject Filter */}
-        <select
-          value={selectedSubject}
-          onChange={(e) => setSelectedSubject(e.target.value)}
-          className="border-slate-200 bg-white text-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm min-w-[200px]"
-        >
-          <option value="overall">Overall Attendance</option>
-          <option value="general">General (No Subject)</option>
-          {subjects.map(s => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </select>
+        {/* Filter Controls */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Filter Type Toggle */}
+          <div className="flex items-center bg-slate-100 rounded-xl p-1">
+            <button
+              onClick={() => {
+                setFilterType("class");
+                if (myClasses.length > 0) setFilterId(myClasses[0].id);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                filterType === "class"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Layers size={13} />
+              Class
+            </button>
+            <button
+              onClick={() => {
+                setFilterType("course");
+                if (courses.length > 0) setFilterId(courses[0].id);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                filterType === "course"
+                  ? "bg-white text-purple-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <GraduationCap size={13} />
+              Course
+            </button>
+          </div>
+
+          {/* Filter Value Select */}
+          <select
+            value={filterId}
+            onChange={(e) => setFilterId(e.target.value)}
+            className="border border-slate-200 bg-white text-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm min-w-[180px]"
+          >
+            {filterType === "class" ? (
+              myClasses.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))
+            ) : (
+              courses.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))
+            )}
+          </select>
+        </div>
       </header>
 
       {/* My Rank Card */}

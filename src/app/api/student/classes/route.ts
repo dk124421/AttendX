@@ -63,7 +63,32 @@ export async function GET(req: Request) {
       presentClasses: (attendanceByClass[cls.id] || []).filter((a: any) => a.status === 'PRESENT').length,
     }))
 
-    return NextResponse.json({ classes: result })
+    // Get ALL classes for course-wise grouping
+    const { data: allClassesRaw } = await supabase
+      .from('classes')
+      .select('id, name')
+
+    // Extract unique course prefixes from class names (e.g., "BTECH", "MCA", "BCA")
+    const courseSet = new Set<string>()
+    ;(allClassesRaw || []).forEach((c: any) => {
+      // Normalize: "B.TECH All-PME" → "BTECH", "BTECH CS-AI CG&M" → "BTECH", "MCA-A" → "MCA"
+      const name = c.name.toUpperCase().replace(/[.\-\s]/g, '')
+      // Try common prefixes
+      const prefixes = ['BTECH', 'MTECH', 'MCA', 'BCA', 'MBA', 'BBA', 'BSC', 'MSC', 'PHD']
+      for (const p of prefixes) {
+        if (name.startsWith(p)) {
+          courseSet.add(p)
+          break
+        }
+      }
+    })
+
+    const courses = Array.from(courseSet).map(c => ({
+      id: c,
+      name: c === 'BTECH' ? 'B.Tech (All)' : c === 'MTECH' ? 'M.Tech (All)' : c === 'MCA' ? 'MCA (All)' : c === 'BCA' ? 'BCA (All)' : c === 'MBA' ? 'MBA (All)' : c === 'BBA' ? 'BBA (All)' : c === 'BSC' ? 'B.Sc (All)' : c === 'MSC' ? 'M.Sc (All)' : c
+    }))
+
+    return NextResponse.json({ classes: result, courses })
   } catch (error) {
     console.error(error)
     return new NextResponse('Internal Error', { status: 500 })
