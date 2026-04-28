@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Send, Calendar as CalendarIcon, AlertTriangle, CheckCircle, X, History, Edit3, ClipboardCheck, BookOpen, Users } from "lucide-react";
 import toast from "react-hot-toast";
-import socket from "@/lib/socketClient";
 
 export default function TeacherAttendance() {
   const [students, setStudents] = useState<any[]>([]);
