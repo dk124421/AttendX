@@ -59,17 +59,10 @@ export default function ClassesPage() {
     fetchData();
   }, []);
 
-  // Students available for assignment (show all students, mark already-assigned ones)
+  // Students available for assignment (show all students)
   const availableStudents = useMemo(() => {
-    return allStudents.filter((s) => {
-      // In edit mode: show unassigned students + students already in THIS class
-      if (modalMode === "edit" && formData.id) {
-        return !s.class_id || s.class_id === formData.id;
-      }
-      // In create mode: show ALL students (assigned ones get a warning badge)
-      return true;
-    });
-  }, [allStudents, modalMode, formData.id]);
+    return allStudents;
+  }, [allStudents]);
 
   // Filtered students based on search
   const filteredStudents = useMemo(() => {

@@ -18,7 +18,7 @@ export async function GET(req: Request) {
         id,
         student_id,
         class_id,
-        class:classes(id, name, department, year)
+        classes:class_students(class:classes(id, name, department, year))
       `)
       .eq('user_id', session.user.id)
       .single()
@@ -28,12 +28,7 @@ export async function GET(req: Request) {
     }
 
     // Build the list of classes the student is in
-    const classes: any[] = []
-    if (student.class) {
-      // student.class could be a single object or array depending on schema
-      const cls = Array.isArray(student.class) ? student.class : [student.class]
-      classes.push(...cls)
-    }
+    const classes: any[] = student.classes?.map((cs: any) => cs.class).filter(Boolean) || []
 
     // Fetch attendance records for this student across all their classes
     const { data: attendanceRecords, error: attendanceError } = await supabase

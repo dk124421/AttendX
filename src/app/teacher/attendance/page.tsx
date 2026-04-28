@@ -375,98 +375,132 @@ export default function TeacherAttendance() {
       {/* MARK MODE */}
       {mode === "mark" && (
         <div className="glass-card rounded-2xl p-5 space-y-4">
-          {/* Student Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-200/50">
-                  <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Student ID
-                  </th>
-                  <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                    Present
-                  </th>
-                  <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                    Absent
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100/50">
-                {(loading ? [] : students).map((student, i) => (
-                  <tr
-                    key={student.id}
-                    className={`hover:bg-white/30 transition-colors ${i === 0 ? "bg-white/20" : ""
-                      }`}
-                  >
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
-                          {student.user.name.charAt(0)}
-                        </div>
-                        <span className="text-sm font-medium text-slate-700">
-                          {student.studentId}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="text-sm font-medium text-slate-800">
-                        {student.user.name}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      <button
-                        onClick={() =>
-                          setMarking((prev) => ({ ...prev, [student.id]: "PRESENT" }))
-                        }
-                        className={`h-8 w-8 mx-auto rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center ${marking[student.id] === "PRESENT"
-                            ? "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/30"
-                            : "text-emerald-500 border-emerald-200 hover:bg-emerald-50"
-                          }`}
-                      >
-                        P
-                      </button>
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      <button
-                        onClick={() =>
-                          setMarking((prev) => ({ ...prev, [student.id]: "ABSENT" }))
-                        }
-                        className={`h-8 w-8 mx-auto rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center ${marking[student.id] === "ABSENT"
-                            ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30"
-                            : "text-rose-500 border-rose-200 hover:bg-rose-50"
-                          }`}
-                      >
-                        A
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {loading && (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">
-                      Loading roster...
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {(() => {
+            const alreadySubmittedToday = todaySessions.some(
+              (s) => s.classId === selectedClass && (s.subjectId || "") === (selectedSubject || "")
+            );
 
-          {/* Submit Button */}
-          <div className="flex justify-end pt-2">
-            <button
-              onClick={handleSubmitClick}
-              disabled={loading || students.length === 0}
-              className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all active:scale-95 disabled:opacity-50 shadow-lg
-                bg-[#1e3a5f] text-white hover:bg-[#162d4a]"
-            >
-              <Send size={15} />
-              Submit Attendance
-            </button>
-          </div>
+            if (alreadySubmittedToday) {
+              return (
+                <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                  <div className="h-16 w-16 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+                    <CheckCircle size={32} className="text-amber-500" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">Attendance Already Submitted</h3>
+                  <p className="text-sm text-slate-500 max-w-md">
+                    You have already marked attendance for this class today. 
+                    If you need to make changes, please use the <strong className="text-amber-600 font-semibold">Modify Past Attendance</strong> tab.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setMode("modify");
+                      setPastDate(new Date().toISOString().split("T")[0]);
+                    }}
+                    className="mt-6 px-6 py-2.5 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors shadow-lg"
+                  >
+                    Modify Today's Attendance
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <>
+                {/* Student Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-slate-200/50">
+                        <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          Student ID
+                        </th>
+                        <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                          Present
+                        </th>
+                        <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                          Absent
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100/50">
+                      {(loading ? [] : students).map((student, i) => (
+                        <tr
+                          key={student.id}
+                          className={`hover:bg-white/30 transition-colors ${i === 0 ? "bg-white/20" : ""
+                            }`}
+                        >
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
+                                {student.user.name.charAt(0)}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">
+                                {student.studentId}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <span className="text-sm font-medium text-slate-800">
+                              {student.user.name}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <button
+                              onClick={() =>
+                                setMarking((prev) => ({ ...prev, [student.id]: "PRESENT" }))
+                              }
+                              className={`h-8 w-8 mx-auto rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center ${marking[student.id] === "PRESENT"
+                                  ? "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/30"
+                                  : "text-emerald-500 border-emerald-200 hover:bg-emerald-50"
+                                }`}
+                            >
+                              P
+                            </button>
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <button
+                              onClick={() =>
+                                setMarking((prev) => ({ ...prev, [student.id]: "ABSENT" }))
+                              }
+                              className={`h-8 w-8 mx-auto rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center ${marking[student.id] === "ABSENT"
+                                  ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30"
+                                  : "text-rose-500 border-rose-200 hover:bg-rose-50"
+                                }`}
+                            >
+                              A
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {loading && (
+                        <tr>
+                          <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">
+                            Loading roster...
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={handleSubmitClick}
+                    disabled={loading || students.length === 0}
+                    className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all active:scale-95 disabled:opacity-50 shadow-lg
+                      bg-[#1e3a5f] text-white hover:bg-[#162d4a]"
+                  >
+                    <Send size={15} />
+                    Submit Attendance
+                  </button>
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
 

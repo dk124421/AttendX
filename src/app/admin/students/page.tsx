@@ -132,7 +132,8 @@ export default function AdminStudentsPage() {
     return (
       s.user?.name?.toLowerCase().includes(q) ||
       s.student_id?.toLowerCase().includes(q) ||
-      s.class?.name?.toLowerCase().includes(q)
+      s.class?.name?.toLowerCase().includes(q) ||
+      s.classes?.some((c: any) => c.name?.toLowerCase().includes(q))
     );
   });
 

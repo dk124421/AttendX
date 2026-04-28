@@ -32,10 +32,13 @@ export async function POST(req: Request) {
 
     // 2. If studentIds provided, assign those students to this class
     if (studentIds && studentIds.length > 0) {
+      const inserts = studentIds.map((studentId: string) => ({
+        class_id: newClass.id,
+        student_id: studentId
+      }))
       const { error: assignError } = await supabase
-        .from('students')
-        .update({ class_id: newClass.id })
-        .in('id', studentIds)
+        .from('class_students')
+        .insert(inserts)
 
       if (assignError) {
         console.error('Failed to assign students to class:', assignError)
@@ -68,17 +71,20 @@ export async function GET() {
   const classIds = classes?.map(c => c.id) || []
 
   if (classIds.length > 0) {
-    const { data: students } = await supabase
-      .from('students')
-      .select('id, class_id, user:users(name), student_id')
+    const { data: classStudents } = await supabase
+      .from('class_students')
+      .select('class_id, student:students(id, user:users(name), student_id)')
       .in('class_id', classIds)
 
     // Attach student count and list to each class
-    const enriched = classes?.map(cls => ({
-      ...cls,
-      students: students?.filter(s => s.class_id === cls.id) || [],
-      studentCount: students?.filter(s => s.class_id === cls.id).length || 0
-    }))
+    const enriched = classes?.map(cls => {
+      const clsStudents = classStudents?.filter(cs => cs.class_id === cls.id).map(cs => cs.student) || []
+      return {
+        ...cls,
+        students: clsStudents,
+        studentCount: clsStudents.length
+      }
+    })
 
     return NextResponse.json(enriched)
   }
@@ -118,16 +124,19 @@ export async function PUT(req: Request) {
     if (studentIds !== undefined) {
       // First, unassign all current students from this class
       await supabase
-        .from('students')
-        .update({ class_id: null })
+        .from('class_students')
+        .delete()
         .eq('class_id', id)
 
       // Then assign the new set of students
       if (studentIds.length > 0) {
+        const inserts = studentIds.map((studentId: string) => ({
+          class_id: id,
+          student_id: studentId
+        }))
         const { error: assignError } = await supabase
-          .from('students')
-          .update({ class_id: id })
-          .in('id', studentIds)
+          .from('class_students')
+          .insert(inserts)
 
         if (assignError) throw assignError
       }
@@ -156,8 +165,8 @@ export async function DELETE(req: Request) {
 
     // Unassign all students from this class first
     await supabase
-      .from('students')
-      .update({ class_id: null })
+      .from('class_students')
+      .delete()
       .eq('class_id', id)
 
     // Delete the class

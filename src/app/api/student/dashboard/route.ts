@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   try {
     const { data: student, error: studentError } = await supabase
       .from('students')
-      .select('*, class:classes(id, name, department, year)')
+      .select('*, classes:class_students(class:classes(id, name, department, year))')
       .eq('user_id', session.user.id)
       .single()
 

@@ -80,12 +80,20 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from('students')
-      .select('*, user:users(id, name, email, created_at), class:classes(id, name, year, department)')
+      .select('*, user:users(id, name, email, created_at), classes:class_students(class:classes(id, name, year, department))')
       .order('student_id', { ascending: true })
 
     if (error) throw error
 
-    return NextResponse.json(data)
+    // Transform data to maintain backward compatibility where possible and expose classes array
+    const transformed = data.map((s: any) => ({
+      ...s,
+      classes: s.classes?.map((cs: any) => cs.class).filter(Boolean) || [],
+      // For legacy UI support, pick the first class as 'class'
+      class: s.classes?.[0]?.class || null
+    }))
+
+    return NextResponse.json(transformed)
   } catch (error) {
     console.error(error)
     return new NextResponse('Internal Error', { status: 500 })

@@ -18,15 +18,20 @@ export async function GET(req: Request) {
   }
 
   try {
-    const { data: students, error } = await supabase
-      .from('students')
+    const { data: classStudents, error } = await supabase
+      .from('class_students')
       .select(`
-        *,
-        user:users(name, email)
+        student:students(
+          *,
+          user:users(name, email)
+        )
       `)
       .eq('class_id', classId)
     
     if (error) throw error
+
+    // Map back to just an array of students for compatibility
+    const students = classStudents.map((cs: any) => cs.student).filter(Boolean)
     
     return NextResponse.json(students)
   } catch (error) {
