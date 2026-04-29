@@ -43,24 +43,21 @@ export default function LoginPage() {
     }
   };
 
-  const autoFill = (selectedRole: Role) => {
+  const selectRole = (selectedRole: Role) => {
     setRole(selectedRole);
     if (selectedRole === "Admin") {
       setIdentifier("admin@college.edu");
       setPassword("admin123");
-    } else if (selectedRole === "Teacher") {
-      setIdentifier("T1001");
-      setPassword("teacher123");
     } else {
-      setIdentifier("S1001");
-      setPassword("student123");
+      setIdentifier("");
+      setPassword("");
     }
   };
 
   const getPlaceholder = () => {
     if (role === "Admin") return "Email Address";
-    if (role === "Teacher") return "Teacher ID (e.g. T1001)";
-    return "Enrollment Number (e.g. S1001)";
+    if (role === "Teacher") return "Teacher ID (e.g. TT001)";
+    return "Enrollment Number (e.g. 2023SUBTCS001)";
   };
 
   return (
@@ -121,19 +118,19 @@ export default function LoginPage() {
                 currentRole={role}
                 thisRole="Admin"
                 icon={<Shield size={22} />}
-                onClick={() => autoFill("Admin")}
+                onClick={() => selectRole("Admin")}
               />
               <RoleButton
                 currentRole={role}
                 thisRole="Teacher"
                 icon={<UserCircle size={22} />}
-                onClick={() => autoFill("Teacher")}
+                onClick={() => selectRole("Teacher")}
               />
               <RoleButton
                 currentRole={role}
                 thisRole="Student"
                 icon={<GraduationCap size={22} />}
-                onClick={() => autoFill("Student")}
+                onClick={() => selectRole("Student")}
               />
             </div>
           </div>

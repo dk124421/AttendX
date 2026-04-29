@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Send, Calendar as CalendarIcon, AlertTriangle, CheckCircle, X, History, Edit3, ClipboardCheck, BookOpen, Users } from "lucide-react";
+import { Send, Calendar as CalendarIcon, AlertTriangle, CheckCircle, X, History, Edit3, ClipboardCheck, BookOpen, Users, Download, Mail, UserX, FileSpreadsheet } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function TeacherAttendance() {
@@ -11,8 +11,15 @@ export default function TeacherAttendance() {
   const [showAbsentReview, setShowAbsentReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Mode: "mark" for new attendance, "modify" for editing past
-  const [mode, setMode] = useState<"mark" | "modify">("mark");
+  // Mode: "mark" for new attendance, "modify" for editing past, "debarred" for debarred list
+  const [mode, setMode] = useState<"mark" | "modify" | "debarred">("mark");
+
+  // Debarred list state
+  const [debarredStudents, setDebarredStudents] = useState<any[]>([]);
+  const [debarredMeta, setDebarredMeta] = useState<any>(null);
+  const [loadingDebarred, setLoadingDebarred] = useState(false);
+  const [sendingAlerts, setSendingAlerts] = useState(false);
+  const [debarredGenerated, setDebarredGenerated] = useState(false);
   const [pastDate, setPastDate] = useState("");
   const [pastRecords, setPastRecords] = useState<any[]>([]);
   const [loadingPast, setLoadingPast] = useState(false);
@@ -288,12 +295,12 @@ export default function TeacherAttendance() {
         </div>
       )}
       {/* Mode Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => setMode("mark")}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${mode === "mark"
-              ? "bg-[#1e3a5f] text-white shadow-lg"
-              : "bg-white/80 text-slate-600 border border-slate-200 hover:bg-white"
+            ? "bg-[#1e3a5f] text-white shadow-lg"
+            : "bg-white/80 text-slate-600 border border-slate-200 hover:bg-white"
             }`}
         >
           <Send size={15} />
@@ -302,19 +309,29 @@ export default function TeacherAttendance() {
         <button
           onClick={() => setMode("modify")}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${mode === "modify"
-              ? "bg-amber-500 text-white shadow-lg"
-              : "bg-white/80 text-slate-600 border border-slate-200 hover:bg-white"
+            ? "bg-amber-500 text-white shadow-lg"
+            : "bg-white/80 text-slate-600 border border-slate-200 hover:bg-white"
             }`}
         >
           <History size={15} />
           Modify Past Attendance
+        </button>
+        <button
+          onClick={() => { setMode("debarred"); setDebarredGenerated(false); setDebarredStudents([]); setDebarredMeta(null); }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${mode === "debarred"
+            ? "bg-rose-600 text-white shadow-lg"
+            : "bg-white/80 text-slate-600 border border-slate-200 hover:bg-white"
+            }`}
+        >
+          <UserX size={15} />
+          Generate Debarred List
         </button>
       </div>
 
       {/* Shared Filters */}
       <div className="glass-card rounded-2xl p-5 space-y-4">
         {/* Filter Row */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid gap-3 ${mode === "debarred" ? "grid-cols-1" : "grid-cols-2"}`}>
           <div>
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
               Class
@@ -328,6 +345,7 @@ export default function TeacherAttendance() {
               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
+          {mode !== "debarred" && (
           <div>
             <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
               Date
@@ -357,6 +375,7 @@ export default function TeacherAttendance() {
               )}
             </div>
           </div>
+          )}
         </div>
         {mode === "modify" && (
           <div className="flex justify-end pt-2">
@@ -366,6 +385,40 @@ export default function TeacherAttendance() {
               className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 disabled:opacity-50 shadow-lg"
             >
               {loadingPast ? "Loading..." : "Fetch Records"}
+            </button>
+          </div>
+        )}
+        {mode === "debarred" && (
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={async () => {
+                if (!selectedClass) { toast.error("Please select a class"); return; }
+                setLoadingDebarred(true);
+                setDebarredGenerated(false);
+                try {
+                  const url = `/api/teacher/debarred?classId=${selectedClass}`;
+                  const res = await fetch(url);
+                  if (!res.ok) { toast.error(await res.text()); return; }
+                  const data = await res.json();
+                  setDebarredStudents(data.students || []);
+                  setDebarredMeta(data.classMeta || null);
+                  setDebarredGenerated(true);
+                  if (data.students.length === 0) {
+                    toast.success("All students have 75%+ attendance!");
+                  } else {
+                    toast(`${data.students.length} student(s) below 75%`, { icon: "⚠️" });
+                  }
+                } catch {
+                  toast.error("Failed to generate debarred list");
+                } finally {
+                  setLoadingDebarred(false);
+                }
+              }}
+              disabled={loadingDebarred || !selectedClass}
+              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-all active:scale-95 disabled:opacity-50 shadow-lg"
+            >
+              <UserX size={15} />
+              {loadingDebarred ? "Generating..." : "Generate List"}
             </button>
           </div>
         )}
@@ -387,7 +440,7 @@ export default function TeacherAttendance() {
                   </div>
                   <h3 className="text-lg font-bold text-slate-800 mb-2">Attendance Already Submitted</h3>
                   <p className="text-sm text-slate-500 max-w-md">
-                    You have already marked attendance for this class today. 
+                    You have already marked attendance for this class today.
                     If you need to make changes, please use the <strong className="text-amber-600 font-semibold">Modify Past Attendance</strong> tab.
                   </p>
                   <button
@@ -452,8 +505,8 @@ export default function TeacherAttendance() {
                                 setMarking((prev) => ({ ...prev, [student.id]: "PRESENT" }))
                               }
                               className={`h-8 w-8 mx-auto rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center ${marking[student.id] === "PRESENT"
-                                  ? "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/30"
-                                  : "text-emerald-500 border-emerald-200 hover:bg-emerald-50"
+                                ? "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/30"
+                                : "text-emerald-500 border-emerald-200 hover:bg-emerald-50"
                                 }`}
                             >
                               P
@@ -465,8 +518,8 @@ export default function TeacherAttendance() {
                                 setMarking((prev) => ({ ...prev, [student.id]: "ABSENT" }))
                               }
                               className={`h-8 w-8 mx-auto rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center ${marking[student.id] === "ABSENT"
-                                  ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30"
-                                  : "text-rose-500 border-rose-200 hover:bg-rose-50"
+                                ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/30"
+                                : "text-rose-500 border-rose-200 hover:bg-rose-50"
                                 }`}
                             >
                               A
@@ -517,234 +570,417 @@ export default function TeacherAttendance() {
           </div>
 
 
-  {/* Past Records Table */ }
-  {
-    pastRecords.length > 0 && (
-      <div className="overflow-x-auto mt-4">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-slate-200/50">
-              <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Student
-              </th>
-              <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                Current Status
-              </th>
-              <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                Change To
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100/50">
-            {pastRecords.map((record) => (
-              <tr key={record.id} className="hover:bg-white/30 transition-colors">
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
-                      {record.student?.user?.name?.charAt(0) || "?"}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">
-                        {record.student?.user?.name || "Unknown"}
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-mono">
-                        {record.student?.student_id || ""}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-3 text-center">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${record.status === "PRESENT"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-rose-100 text-rose-700"
-                      }`}
-                  >
-                    {record.status}
-                  </span>
-                </td>
-                <td className="px-3 py-3 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => handleModifyRecord(record, "PRESENT")}
-                      disabled={record.status === "PRESENT" || modifying}
-                      className={`h-8 w-8 rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center disabled:opacity-30 ${record.status === "PRESENT"
-                          ? "bg-emerald-500 text-white border-emerald-500"
-                          : "text-emerald-500 border-emerald-200 hover:bg-emerald-50"
-                        }`}
-                    >
-                      P
-                    </button>
-                    <button
-                      onClick={() => handleModifyRecord(record, "ABSENT")}
-                      disabled={record.status === "ABSENT" || modifying}
-                      className={`h-8 w-8 rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center disabled:opacity-30 ${record.status === "ABSENT"
-                          ? "bg-rose-500 text-white border-rose-500"
-                          : "text-rose-500 border-rose-200 hover:bg-rose-50"
-                        }`}
-                    >
-                      A
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
+          {/* Past Records Table */}
+          {
+            pastRecords.length > 0 && (
+              <div className="overflow-x-auto mt-4">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-200/50">
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        Student
+                      </th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                        Current Status
+                      </th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                        Change To
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100/50">
+                    {pastRecords.map((record) => (
+                      <tr key={record.id} className="hover:bg-white/30 transition-colors">
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
+                              {record.student?.user?.name?.charAt(0) || "?"}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-slate-800">
+                                {record.student?.user?.name || "Unknown"}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono">
+                                {record.student?.student_id || ""}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${record.status === "PRESENT"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700"
+                              }`}
+                          >
+                            {record.status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleModifyRecord(record, "PRESENT")}
+                              disabled={record.status === "PRESENT" || modifying}
+                              className={`h-8 w-8 rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center disabled:opacity-30 ${record.status === "PRESENT"
+                                ? "bg-emerald-500 text-white border-emerald-500"
+                                : "text-emerald-500 border-emerald-200 hover:bg-emerald-50"
+                                }`}
+                            >
+                              P
+                            </button>
+                            <button
+                              onClick={() => handleModifyRecord(record, "ABSENT")}
+                              disabled={record.status === "ABSENT" || modifying}
+                              className={`h-8 w-8 rounded-lg border-2 text-xs font-extrabold transition-all duration-200 flex items-center justify-center disabled:opacity-30 ${record.status === "ABSENT"
+                                ? "bg-rose-500 text-white border-rose-500"
+                                : "text-rose-500 border-rose-200 hover:bg-rose-50"
+                                }`}
+                            >
+                              A
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          }
 
-  {
-    pastRecords.length === 0 && pastDate && !loadingPast && (
-      <div className="text-center py-8 text-slate-400 text-sm">
-        No records found. Select a date and click &quot;Fetch Records&quot;.
-      </div>
-    )
-  }
+          {
+            pastRecords.length === 0 && pastDate && !loadingPast && (
+              <div className="text-center py-8 text-slate-400 text-sm">
+                No records found. Select a date and click &quot;Fetch Records&quot;.
+              </div>
+            )
+          }
 
-  {/* Mark All Present Button */ }
-  {
-    pastRecords.length > 0 && (
-      <div className="flex justify-end pt-3 border-t border-slate-100">
-        <button
-          onClick={async () => {
-            const absentRecords = pastRecords.filter(r => r.status === "ABSENT");
-            if (absentRecords.length === 0) {
-              toast("All students are already marked Present!", { icon: "✅" });
-              return;
-            }
-            setModifying(true);
-            try {
-              for (const record of absentRecords) {
-                await fetch("/api/teacher/attendance/modify", {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    studentId: record.student_id,
-                    classId: record.class_id,
-                    subjectId: record.subject_id,
-                    date: record.date,
-                    newStatus: "PRESENT",
-                  }),
-                });
-              }
-              setPastRecords(prev =>
-                prev.map(r => ({ ...r, status: "PRESENT" }))
-              );
-              toast.success(`${absentRecords.length} student(s) marked Present!`);
-            } catch {
-              toast.error("Failed to update some records");
-            } finally {
-              setModifying(false);
-            }
-          }}
-          disabled={modifying || pastRecords.every(r => r.status === "PRESENT")}
-          className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-emerald-200"
-        >
-          <CheckCircle size={15} />
-          {modifying ? "Updating..." : "Mark All Present"}
-        </button>
-      </div>
-    )
-  }
+          {/* Mark All Present Button */}
+          {
+            pastRecords.length > 0 && (
+              <div className="flex justify-end pt-3 border-t border-slate-100">
+                <button
+                  onClick={async () => {
+                    const absentRecords = pastRecords.filter(r => r.status === "ABSENT");
+                    if (absentRecords.length === 0) {
+                      toast("All students are already marked Present!", { icon: "✅" });
+                      return;
+                    }
+                    setModifying(true);
+                    try {
+                      for (const record of absentRecords) {
+                        await fetch("/api/teacher/attendance/modify", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            studentId: record.student_id,
+                            classId: record.class_id,
+                            subjectId: record.subject_id,
+                            date: record.date,
+                            newStatus: "PRESENT",
+                          }),
+                        });
+                      }
+                      setPastRecords(prev =>
+                        prev.map(r => ({ ...r, status: "PRESENT" }))
+                      );
+                      toast.success(`${absentRecords.length} student(s) marked Present!`);
+                    } catch {
+                      toast.error("Failed to update some records");
+                    } finally {
+                      setModifying(false);
+                    }
+                  }}
+                  disabled={modifying || pastRecords.every(r => r.status === "PRESENT")}
+                  className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-emerald-200"
+                >
+                  <CheckCircle size={15} />
+                  {modifying ? "Updating..." : "Mark All Present"}
+                </button>
+              </div>
+            )
+          }
         </div >
       )
-}
+      }
 
-{/* Absent Students Review Modal */ }
-{
-  showAbsentReview && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white p-6 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
-              <AlertTriangle size={22} />
+      {/* DEBARRED MODE */}
+      {mode === "debarred" && debarredGenerated && (
+        <div className="glass-card rounded-2xl p-5 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <UserX size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Review Absent Students</h3>
-              <p className="text-xs text-slate-500">Please verify this list before final submission.</p>
+              <h2 className="text-lg font-bold text-slate-800">Debarred Students List</h2>
+              <p className="text-xs text-slate-500">
+                {debarredMeta?.className || ""}{debarredMeta?.subjectName ? ` — ${debarredMeta.subjectName}` : ""}{debarredMeta?.classYear ? ` — Year ${debarredMeta.classYear}` : ""}
+                {" · "}
+                Students with attendance below 75%
+              </p>
             </div>
           </div>
-          <button
-            onClick={() => setShowAbsentReview(false)}
-            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
 
-        {/* Absent Students List */}
-        {absentStudents.length === 0 ? (
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 mb-5">
-            <CheckCircle size={20} className="text-emerald-500" />
-            <p className="text-sm font-semibold text-emerald-700">
-              All students are marked Present! No absent students.
-            </p>
-          </div>
-        ) : (
-          <div className="mb-5">
-            <p className="text-sm font-semibold text-slate-600 mb-3">
-              <span className="text-rose-500 font-bold">{absentStudents.length}</span> student{absentStudents.length > 1 ? "s" : ""} marked as Absent:
-            </p>
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {absentStudents.map((student) => (
-                <div
-                  key={student.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-100"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-rose-200 flex items-center justify-center text-rose-600 font-bold text-xs shrink-0">
-                      {student.user.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">{student.user.name}</p>
-                      <p className="text-[10px] text-slate-400 font-medium">ID: {student.studentId}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setMarking((prev) => ({ ...prev, [student.id]: "PRESENT" }));
-                    }}
-                    className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors"
-                  >
-                    Mark Present
-                  </button>
-                </div>
-              ))}
+          {debarredStudents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+              <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
+                <CheckCircle size={32} className="text-emerald-500" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">No Debarred Students!</h3>
+              <p className="text-sm text-slate-500 max-w-md">
+                All students in this class have 75% or above attendance. Great work!
+              </p>
             </div>
-          </div>
-        )}
+          ) : (
+            <>
+              {/* Summary badge */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-100 text-rose-700 text-xs font-bold">
+                  <AlertTriangle size={13} />
+                  {debarredStudents.length} student{debarredStudents.length > 1 ? "s" : ""} below 75%
+                </span>
+              </div>
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowAbsentReview(false)}
-            className="flex-1 rounded-xl bg-slate-100 py-3 font-semibold text-slate-600 hover:bg-slate-200 transition-all"
-          >
-            Go Back & Edit
-          </button>
-          <button
-            onClick={handleConfirmSubmit}
-            disabled={submitting}
-            className="flex-1 rounded-xl bg-[#1e3a5f] py-3 font-bold text-white hover:bg-[#162d4a] transition-all active:scale-95 disabled:opacity-50 shadow-lg flex items-center justify-center gap-2"
-          >
-            {submitting ? (
-              "Submitting..."
-            ) : (
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-200/50">
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">#</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Student</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Enrollment</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Total</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Present</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Absent</th>
+                      <th className="px-3 py-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Attendance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100/50">
+                    {debarredStudents.map((student, i) => (
+                      <tr key={student.studentId} className="hover:bg-white/30 transition-colors">
+                        <td className="px-3 py-3 text-sm text-slate-500 font-medium">{i + 1}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
+                              {student.name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-slate-800">{student.name}</p>
+                              <p className="text-[10px] text-slate-400">{student.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                            {student.enrollmentNo}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className="text-sm font-bold text-slate-700">{student.totalClasses}</span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className="text-sm font-bold text-emerald-600">{student.attended}</span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className="text-sm font-bold text-rose-600">{student.absent}</span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${student.percentage < 50
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-amber-100 text-amber-700"
+                            }`}>
+                            {student.percentage}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 pt-3 border-t border-slate-100">
+            <button
+              onClick={() => { setDebarredGenerated(false); setDebarredStudents([]); setDebarredMeta(null); setMode("mark"); }}
+              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95"
+            >
+              <CheckCircle size={15} />
+              OK
+            </button>
+
+            {debarredStudents.length > 0 && (
               <>
-                <CheckCircle size={16} />
-                Confirm & Submit
+                <button
+                  onClick={() => {
+                    const meta = debarredMeta || {};
+                    const lines: string[] = [];
+                    lines.push(`Debarred Students List — AttendX`);
+                    lines.push(`Class: ${meta.className || "N/A"}`);
+                    lines.push(`Subject: ${meta.subjectName || "General"}`);
+                    lines.push(`Year: ${meta.classYear || "N/A"}`);
+                    lines.push(`Generated: ${new Date().toLocaleString("en-IN")}`);
+                    lines.push(`Threshold: 75%`);
+                    lines.push("");
+                    lines.push("#,Name,Enrollment No,Total Classes,Present,Absent,Attendance %");
+                    debarredStudents.forEach((s, i) => {
+                      lines.push(`${i + 1},"${s.name}",${s.enrollmentNo},${s.totalClasses},${s.attended},${s.absent},${s.percentage}%`);
+                    });
+                    const csv = lines.join("\n");
+                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `debarred_${(meta.className || "class").replace(/\s+/g, "_")}_${(meta.subjectName || "general").replace(/\s+/g, "_")}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    toast.success("CSV downloaded!");
+                  }}
+                  className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#1e3a5f] text-white hover:bg-[#162d4a] transition-all active:scale-95 shadow-lg"
+                >
+                  <Download size={15} />
+                  Download CSV
+                </button>
+
+                <button
+                  onClick={async () => {
+                    const studentsWithEmail = debarredStudents.filter(s => s.email);
+                    if (studentsWithEmail.length === 0) {
+                      toast.error("No students have email addresses on file");
+                      return;
+                    }
+                    setSendingAlerts(true);
+                    try {
+                      const res = await fetch("/api/teacher/debarred/send-alerts", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          classId: selectedClass,
+                          students: studentsWithEmail,
+                        }),
+                      });
+                      if (res.ok) {
+                        const result = await res.json();
+                        toast.success(`Alert emails sent to ${result.sent} student(s)!`);
+                        if (result.failed > 0) {
+                          toast.error(`${result.failed} email(s) failed to send`);
+                        }
+                      } else {
+                        toast.error(await res.text());
+                      }
+                    } catch {
+                      toast.error("Failed to send alert emails");
+                    } finally {
+                      setSendingAlerts(false);
+                    }
+                  }}
+                  disabled={sendingAlerts}
+                  className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-all active:scale-95 disabled:opacity-50 shadow-lg"
+                >
+                  <Mail size={15} />
+                  {sendingAlerts ? "Sending..." : "Send Alert Email"}
+                </button>
               </>
             )}
-          </button>
+          </div>
         </div>
-      </div>
-    </div>
-  )
-}
+      )}
+
+      {/* Absent Students Review Modal */}
+      {
+        showAbsentReview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white p-6 shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                    <AlertTriangle size={22} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Review Absent Students</h3>
+                    <p className="text-xs text-slate-500">Please verify this list before final submission.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAbsentReview(false)}
+                  className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Absent Students List */}
+              {absentStudents.length === 0 ? (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 mb-5">
+                  <CheckCircle size={20} className="text-emerald-500" />
+                  <p className="text-sm font-semibold text-emerald-700">
+                    All students are marked Present! No absent students.
+                  </p>
+                </div>
+              ) : (
+                <div className="mb-5">
+                  <p className="text-sm font-semibold text-slate-600 mb-3">
+                    <span className="text-rose-500 font-bold">{absentStudents.length}</span> student{absentStudents.length > 1 ? "s" : ""} marked as Absent:
+                  </p>
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {absentStudents.map((student) => (
+                      <div
+                        key={student.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-100"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-rose-200 flex items-center justify-center text-rose-600 font-bold text-xs shrink-0">
+                            {student.user.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">{student.user.name}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">ID: {student.studentId}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setMarking((prev) => ({ ...prev, [student.id]: "PRESENT" }));
+                          }}
+                          className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors"
+                        >
+                          Mark Present
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAbsentReview(false)}
+                  className="flex-1 rounded-xl bg-slate-100 py-3 font-semibold text-slate-600 hover:bg-slate-200 transition-all"
+                >
+                  Go Back & Edit
+                </button>
+                <button
+                  onClick={handleConfirmSubmit}
+                  disabled={submitting}
+                  className="flex-1 rounded-xl bg-[#1e3a5f] py-3 font-bold text-white hover:bg-[#162d4a] transition-all active:scale-95 disabled:opacity-50 shadow-lg flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    "Submitting..."
+                  ) : (
+                    <>
+                      <CheckCircle size={16} />
+                      Confirm & Submit
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
     </div >
   );
 }

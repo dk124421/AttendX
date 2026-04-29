@@ -209,3 +209,86 @@ export async function sendDebarredListToTeacher(
     html,
   })
 }
+
+// ──────────────── Subject-Specific Debarment Alert ────────────────
+
+interface DebarredSubjectAlertParams {
+  studentName: string
+  email: string
+  className: string
+  subjectName: string
+  currentPercentage: number
+  requiredPercentage: number
+  totalClasses: number
+  attended: number
+}
+
+export async function sendDebarredSubjectAlert({
+  studentName,
+  email,
+  className,
+  subjectName,
+  currentPercentage,
+  requiredPercentage,
+  totalClasses,
+  attended,
+}: DebarredSubjectAlertParams) {
+  const shortfall = requiredPercentage - currentPercentage
+  const classesNeeded = totalClasses > 0
+    ? Math.ceil(((requiredPercentage / 100) * (totalClasses + 1) - attended))
+    : 0
+
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+      <div style="background: linear-gradient(135deg, #7f1d1d, #dc2626); padding: 32px; text-align: center;">
+        <h1 style="color: #fff; margin: 0; font-size: 24px;">🚫 Low Attendance Warning</h1>
+        <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">${className} — ${subjectName}</p>
+      </div>
+      <div style="padding: 32px;">
+        <p style="color: #334155; font-size: 16px; line-height: 1.6;">Dear <strong>${studentName}</strong>,</p>
+        
+        <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <p style="color: #7f1d1d; font-size: 15px; margin: 0; font-weight: 600;">
+            Your attendance in <strong>${subjectName}</strong> is currently 
+            <span style="font-size: 24px; color: #dc2626;">${currentPercentage}%</span> 
+            which is below the required <span style="font-size: 20px; color: #16a34a;">${requiredPercentage}%</span>.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin: 20px 0;">
+          <div style="flex: 1; background: #f8fafc; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #e2e8f0;">
+            <p style="margin: 0; font-size: 24px; font-weight: 700; color: #1e3a5f;">${totalClasses}</p>
+            <p style="margin: 4px 0 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Total Classes</p>
+          </div>
+          <div style="flex: 1; background: #f0fdf4; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #bbf7d0;">
+            <p style="margin: 0; font-size: 24px; font-weight: 700; color: #16a34a;">${attended}</p>
+            <p style="margin: 4px 0 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Attended</p>
+          </div>
+          <div style="flex: 1; background: #fef2f2; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #fecaca;">
+            <p style="margin: 0; font-size: 24px; font-weight: 700; color: #dc2626;">${totalClasses - attended}</p>
+            <p style="margin: 4px 0 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Absent</p>
+          </div>
+        </div>
+
+        <div style="background: #fee2e2; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <p style="color: #991b1b; font-size: 14px; margin: 0; font-weight: 600;">
+            ⚠️ You are short by <strong>${shortfall}%</strong>. You are at risk of being <strong>DEBARRED</strong> from examinations in this subject.
+          </p>
+        </div>
+
+        <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+          Please resume regular attendance immediately and contact your class teacher if you have a valid reason for absence. Failure to improve your attendance may result in debarment from end-semester examinations.
+        </p>
+
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated email from AttendX. Please do not reply.</p>
+        </div>
+      </div>
+    </div>
+  `
+  return sendEmail({
+    to: email,
+    subject: `🚫 Low Attendance Warning: ${subjectName} (${currentPercentage}%) — ${className} — AttendX`,
+    html,
+  })
+}
