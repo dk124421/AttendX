@@ -17,6 +17,7 @@ import {
   CalendarDays,
   Menu,
   X,
+  Bell,
 } from "lucide-react";
 import AttendXLogo from "@/components/AttendXLogo";
 
@@ -30,9 +31,9 @@ const menuItems = {
     { name: "Students", icon: GraduationCap, href: "/admin/students" },
     { name: "Teachers", icon: UserCircle, href: "/admin/teachers" },
     { name: "Classes", icon: Layers, href: "/admin/classes" },
-
     { name: "Courses", icon: BookOpen, href: "/admin/courses" },
     { name: "Calendar", icon: CalendarDays, href: "/admin/calendar" },
+    { name: "Alerts", icon: Bell, href: "/admin/alerts" },
   ],
   TEACHER: [
     { name: "My Classes", icon: Layers, href: "/teacher" },
