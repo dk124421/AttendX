@@ -124,11 +124,15 @@ export async function POST(req: Request) {
     const classResults: any[] = []
 
     for (const classId of targetClassIds) {
-      // Get students in this class
-      const { data: students } = await supabase
-        .from('students')
-        .select('id, student_id')
+      // Get students in this class via class_students junction
+      const { data: classStudentLinks } = await supabase
+        .from('class_students')
+        .select('student:students(id, student_id)')
         .eq('class_id', classId)
+
+      const students = (classStudentLinks || [])
+        .map((link: any) => link.student)
+        .filter(Boolean)
 
       if (!students || students.length === 0) continue
 

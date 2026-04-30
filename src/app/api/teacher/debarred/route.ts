@@ -56,20 +56,20 @@ export async function GET(req: Request) {
       .eq('id', classId)
       .single()
 
-    // 3. Get students — EXACT same query as leaderboard
-    const { data: students, error: studentsError } = await supabase
-      .from('students')
-      .select(`
-        id,
-        student_id,
-        user:users(name)
-      `)
+    // 3. Get students via class_students junction table
+    const { data: classStudentLinks, error: csError } = await supabase
+      .from('class_students')
+      .select('student:students(id, student_id, user:users(name))')
       .eq('class_id', classId)
 
-    if (studentsError) {
-      console.error('[DEBARRED] Students error:', studentsError)
-      return new NextResponse(`Students query failed: ${studentsError.message}`, { status: 500 })
+    if (csError) {
+      console.error('[DEBARRED] class_students error:', csError)
+      return new NextResponse(`Students query failed: ${csError.message}`, { status: 500 })
     }
+
+    const students = (classStudentLinks || [])
+      .map((link: any) => link.student)
+      .filter(Boolean)
 
     if (!students || students.length === 0) {
       return NextResponse.json({

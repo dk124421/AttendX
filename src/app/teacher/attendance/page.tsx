@@ -432,32 +432,22 @@ export default function TeacherAttendance() {
               (s) => s.classId === selectedClass && (s.subjectId || "") === (selectedSubject || "")
             );
 
-            if (alreadySubmittedToday) {
-              return (
-                <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                  <div className="h-16 w-16 rounded-full bg-amber-50 flex items-center justify-center mb-4">
-                    <CheckCircle size={32} className="text-amber-500" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-800 mb-2">Attendance Already Submitted</h3>
-                  <p className="text-sm text-slate-500 max-w-md">
-                    You have already marked attendance for this class today.
-                    If you need to make changes, please use the <strong className="text-amber-600 font-semibold">Modify Past Attendance</strong> tab.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setMode("modify");
-                      setPastDate(new Date().toISOString().split("T")[0]);
-                    }}
-                    className="mt-6 px-6 py-2.5 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors shadow-lg"
-                  >
-                    Modify Today's Attendance
-                  </button>
-                </div>
-              );
-            }
-
             return (
               <>
+                {alreadySubmittedToday && (
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 mb-4">
+                    <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                      <AlertTriangle size={20} className="text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-amber-800 mb-0.5">Attendance Already Submitted Today</h3>
+                      <p className="text-xs text-amber-600">
+                        Attendance was already recorded for this class today. Submitting again will <strong>override</strong> the existing records.
+                        You can also use <strong>Modify Past Attendance</strong> to edit individual records.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {/* Student Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">

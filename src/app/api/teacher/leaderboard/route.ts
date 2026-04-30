@@ -49,20 +49,20 @@ export async function GET(req: Request) {
       return new NextResponse('Not assigned to this class', { status: 403 })
     }
 
-    // Get all students in this class
-    const { data: students, error: studentsError } = await supabase
-      .from('students')
-      .select(`
-        id,
-        student_id,
-        user:users(name)
-      `)
+    // Get all students in this class via class_students junction table
+    const { data: classStudentLinks, error: csError } = await supabase
+      .from('class_students')
+      .select('student:students(id, student_id, user:users(name))')
       .eq('class_id', classId)
 
-    if (studentsError) throw studentsError
+    if (csError) throw csError
 
-    if (!students || students.length === 0) {
-      return NextResponse.json({ top: [], bottom: [] })
+    const students = (classStudentLinks || [])
+      .map((link: any) => link.student)
+      .filter(Boolean)
+
+    if (students.length === 0) {
+      return NextResponse.json({ all: [] })
     }
 
     // Get all attendance records for these students in this class
