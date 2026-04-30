@@ -132,15 +132,15 @@ export async function GET(req: Request) {
 
       const { data: studentDetails } = await supabase
         .from('students')
-        .select('id, parent_contact, user:users(email)')
+        .select('id, parent_email, contact_email, user:users(email)')
         .in('id', debarredIds)
 
       if (studentDetails) {
         for (const detail of studentDetails) {
           const item = debarredList.find((d: any) => d.studentId === detail.id)
           if (item) {
-            item.email = (detail as any).user?.email || ''
-            item.parentContact = (detail as any).parent_contact || ''
+            item.email = (detail as any).contact_email || (detail as any).user?.email || ''
+            item.parentContact = (detail as any).parent_email || ''
           }
         }
       }

@@ -1,10 +1,13 @@
 import nodemailer from 'nodemailer'
 
+const port = parseInt(process.env.SMTP_PORT || '465')
+
 // Create reusable transporter
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
+  port: port,
+  secure: port === 465, // true for port 465, false for other ports
+  requireTLS: port === 587, // force STARTTLS for port 587
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
