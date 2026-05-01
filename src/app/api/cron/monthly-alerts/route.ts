@@ -70,11 +70,13 @@ export async function GET(req: Request) {
       const percentage = total > 0 ? Math.round((present / total) * 100) : 0
 
       if (total > 0 && percentage < 75) {
+        const userObj: any = Array.isArray(student.user) ? student.user[0] : student.user;
+        
         // Send to student
-        const contactEmail = student.contact_email || student.user?.email
+        const contactEmail = student.contact_email || userObj?.email
         if (contactEmail) {
           emailsToSend.push({
-            studentName: student.user?.name || 'Unknown',
+            studentName: userObj?.name || 'Unknown',
             email: contactEmail,
             percentage,
           })
@@ -82,7 +84,7 @@ export async function GET(req: Request) {
         // Send to parent
         if (student.parent_email) {
           emailsToSend.push({
-            studentName: student.user?.name || 'Unknown',
+            studentName: userObj?.name || 'Unknown',
             email: student.parent_email,
             percentage,
           })
