@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { generateMonthlyDebarredReport } from '@/lib/attendanceAlerts'
+import { logger } from '@/lib/logger'
 
 // GET /api/alerts/cron
 // Intended to be called by an external cron service (e.g., Vercel Cron, cron-job.org)
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
     const month = now.getMonth() + 1
     const year = now.getFullYear()
 
-    console.log(`[CRON] Auto-generating monthly debarred report for ${month}/${year}`)
+    logger.info(`[CRON] Auto-generating monthly debarred report for ${month}/${year}`)
 
     const result = await generateMonthlyDebarredReport(month, year)
 
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
       ...result,
     })
   } catch (error) {
-    console.error('[CRON] Error:', error)
+    logger.error('[CRON] Error:', error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

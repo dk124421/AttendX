@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 export async function PUT(req: Request) {
   const session = await getServerSession(authOptions)
@@ -32,7 +33,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ message: 'Password updated successfully' })
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

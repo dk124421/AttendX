@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { sendStudentDetailedDebarredAlert, sendParentDebarredAlert } from '@/lib/email'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
       total: totalEmailsAttempted,
     })
   } catch (error: any) {
-    console.error('[ADMIN ALERTS SEND]', error)
+    logger.error('[ADMIN ALERTS SEND]', error)
     return new NextResponse(`Internal Error: ${error.message}`, { status: 500 })
   }
 }

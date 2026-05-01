@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { sendDebarredAlert } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 // Verify cron secret for security (optional but recommended in production)
 // In Vercel, this is passed via Authorization header.
@@ -22,7 +23,7 @@ export async function GET(req: Request) {
       .single()
 
     if (settingError || !setting) {
-      console.log('[CRON] No monthly_alert_date setting found or table missing.')
+      logger.info('[CRON] No monthly_alert_date setting found or table missing.')
       return NextResponse.json({ message: 'No alert date configured.' })
     }
 
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: `Today is ${todayStr}. Scheduled for ${setting.value}. Skipping.` })
     }
 
-    console.log('[CRON] Today matches the scheduled date. Processing monthly alerts...')
+    logger.info('[CRON] Today matches the scheduled date. Processing monthly alerts...')
 
     // 2. Fetch all students with contact info
     const { data: students, error: studentsError } = await supabase
@@ -115,7 +116,7 @@ export async function GET(req: Request) {
       total: emailsToSend.length,
     })
   } catch (error: any) {
-    console.error('[CRON ALERTS]', error)
+    logger.error('[CRON ALERTS]', error)
     return NextResponse.json({ message: `Internal Error: ${error.message}` }, { status: 500 })
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -27,7 +28,7 @@ export async function GET() {
 
     return NextResponse.json({ date: data?.value || '28', requiresSetup: false })
   } catch (error: any) {
-    console.error('[SETTINGS GET]', error)
+    logger.error('[SETTINGS GET]', error)
     return NextResponse.json({ date: '28', error: error.message }, { status: 200 })
   }
 }
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, date })
   } catch (error: any) {
-    console.error('[SETTINGS POST]', error)
+    logger.error('[SETTINGS POST]', error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

@@ -156,11 +156,7 @@ export default function TeacherAttendance() {
 
       if (res.ok) {
         toast.success("Attendance submitted successfully!");
-        socket.emit("attendance_marked", {
-          classId: selectedClass,
-          subject: currentSubjectName,
-          timeStamp: new Date().toLocaleTimeString(),
-        });
+        // The real-time update is handled by Supabase channels if needed
         setShowAbsentReview(false);
         // Refresh today's session summary
         fetchTodaySessions();

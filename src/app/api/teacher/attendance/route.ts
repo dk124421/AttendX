@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { checkConsecutiveAbsences, checkMonthlyNonConsecutiveAbsences } from '@/lib/attendanceAlerts'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -109,14 +110,14 @@ export async function POST(req: Request) {
       ).then((results) => {
         const failed = results.filter(r => r.status === 'rejected')
         if (failed.length > 0) {
-          console.error('[ALERTS] Some alert checks failed:', failed)
+          logger.error('[ALERTS] Some alert checks failed:', failed)
         }
       })
     }
     
     return NextResponse.json({ message: 'Attendance recorded successfully', count: results.length })
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

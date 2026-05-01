@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
@@ -95,7 +96,7 @@ export async function GET() {
 
     return NextResponse.json(transformed)
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
@@ -141,7 +142,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ message: 'Student updated successfully' })
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
@@ -173,7 +174,7 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ message: 'Student deleted successfully' })
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

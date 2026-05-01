@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json(users)
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

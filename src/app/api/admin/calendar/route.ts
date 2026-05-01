@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 // GET /api/admin/calendar — fetch events for a month
 export async function GET(req: Request) {
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(data || [])
   } catch (error) {
-    console.error('[CALENDAR] GET Error:', error)
+    logger.error('[CALENDAR] GET Error:', error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error('[CALENDAR] POST Error:', error)
+    logger.error('[CALENDAR] POST Error:', error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
@@ -87,7 +88,7 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ message: 'Event deleted' })
   } catch (error) {
-    console.error('[CALENDAR] DELETE Error:', error)
+    logger.error('[CALENDAR] DELETE Error:', error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

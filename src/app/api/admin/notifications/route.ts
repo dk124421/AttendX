@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
       message: `Notification sent to ${notificationRows.length} students`
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return new NextResponse('Internal Error', { status: 500 });
   }
 }

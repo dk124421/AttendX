@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -88,7 +89,7 @@ export async function GET() {
 
     // Get student counts per class using class_students junction table
     const classIds = (recentClasses || []).map(c => c.id)
-    let classCounts: Record<string, number> = {}
+    const classCounts: Record<string, number> = {}
     if (classIds.length > 0) {
       const { data: csLinks } = await supabase
         .from('class_students')
@@ -118,7 +119,7 @@ export async function GET() {
       classAttendance,
     })
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { sendDebarredSubjectAlert } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -95,7 +96,7 @@ export async function POST(req: Request) {
       total: students.length,
     })
   } catch (error) {
-    console.error('[SEND DEBARRED ALERTS]', error)
+    logger.error('[SEND DEBARRED ALERTS]', error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

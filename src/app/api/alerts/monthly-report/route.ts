@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { generateMonthlyDebarredReport } from '@/lib/attendanceAlerts'
+import { logger } from '@/lib/logger'
 
 // POST /api/alerts/monthly-report
 // Manually trigger the monthly debarred report
@@ -23,13 +24,13 @@ export async function POST(req: Request) {
       year = year || now.getFullYear()
     }
 
-    console.log(`[MONTHLY REPORT] Generating report for ${month}/${year} (triggered by ${session.user.email})`)
+    logger.info(`[MONTHLY REPORT] Generating report for ${month}/${year} (triggered by ${session.user.email})`)
 
     const result = await generateMonthlyDebarredReport(month, year)
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('[MONTHLY REPORT] Error:', error)
+    logger.error('[MONTHLY REPORT] Error:', error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

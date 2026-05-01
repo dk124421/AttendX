@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -63,7 +64,7 @@ export async function GET(req: Request) {
       .eq('class_id', classId)
 
     if (csError) {
-      console.error('[DEBARRED] class_students error:', csError)
+      logger.error('[DEBARRED] class_students error:', csError)
       return new NextResponse(`Students query failed: ${csError.message}`, { status: 500 })
     }
 
@@ -87,7 +88,7 @@ export async function GET(req: Request) {
       .in('student_id', studentIds)
 
     if (attError) {
-      console.error('[DEBARRED] Attendance error:', attError)
+      logger.error('[DEBARRED] Attendance error:', attError)
       return new NextResponse(`Attendance query failed: ${attError.message}`, { status: 500 })
     }
 
@@ -156,7 +157,7 @@ export async function GET(req: Request) {
       students: debarredList,
     })
   } catch (error: any) {
-    console.error('[DEBARRED API]', error)
+    logger.error('[DEBARRED API]', error)
     return new NextResponse(`Internal Error: ${error?.message || 'Unknown'}`, { status: 500 })
   }
 }

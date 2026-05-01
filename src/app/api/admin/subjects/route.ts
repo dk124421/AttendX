@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json(subject)
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
@@ -32,7 +33,7 @@ export async function GET() {
     .select('*')
   
   if (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
   
@@ -63,7 +64,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json(subject)
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
@@ -98,7 +99,7 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ message: 'Subject deleted successfully' })
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -90,7 +91,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ classes: result, courses })
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     return new NextResponse('Internal Error', { status: 500 })
   }
 }
