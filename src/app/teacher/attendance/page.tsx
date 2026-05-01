@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Send, Calendar as CalendarIcon, AlertTriangle, CheckCircle, X, History, Edit3, ClipboardCheck, BookOpen, Users, Download, Mail, UserX, FileSpreadsheet } from "lucide-react";
+import { Send, Calendar as CalendarIcon, AlertTriangle, CheckCircle, X, History, Edit3, ClipboardCheck, BookOpen, Users, Download, Mail, UserX, FileSpreadsheet, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function TeacherAttendance() {
@@ -958,7 +958,10 @@ export default function TeacherAttendance() {
                   className="flex-1 rounded-xl bg-[#1e3a5f] py-3 font-bold text-white hover:bg-[#162d4a] transition-all active:scale-95 disabled:opacity-50 shadow-lg flex items-center justify-center gap-2"
                 >
                   {submitting ? (
-                    "Submitting..."
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Submitting...
+                    </>
                   ) : (
                     <>
                       <CheckCircle size={16} />

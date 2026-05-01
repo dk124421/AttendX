@@ -34,8 +34,7 @@ export async function POST(req: Request) {
     // For each student, check if a record already exists for this class+date+subject
     // If it exists, update it. If not, insert a new one.
     // This avoids the NULL subject_id upsert problem in Postgres.
-    const results = []
-    for (const record of attendanceData) {
+    const results = await Promise.all(attendanceData.map(async (record: any) => {
       let query = supabase
         .from('attendance')
         .select('id')
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
           .eq('id', existing[0].id)
           .select()
         if (error) throw error
-        if (updated) results.push(updated[0])
+        return updated ? updated[0] : null
       } else {
         // Insert new record
         const { data: inserted, error } = await supabase
@@ -75,12 +74,12 @@ export async function POST(req: Request) {
           })
           .select()
         if (error) throw error
-        if (inserted) results.push(inserted[0])
+        return inserted ? inserted[0] : null
       }
-    }
+    }))
 
     // Calculate streaks for impacted students
-    for (const record of attendanceData) {
+    await Promise.all(attendanceData.map(async (record: any) => {
       if (record.status === 'PRESENT') {
         const { error: updateError } = await supabase.rpc('increment_streak', { student_id_param: record.studentId })
         if (updateError) {
@@ -90,7 +89,7 @@ export async function POST(req: Request) {
       } else {
         await supabase.from('students').update({ current_streak: 0 }).eq('id', record.studentId)
       }
-    }
+    }))
 
     // ──── Trigger attendance alerts asynchronously (fire-and-forget) ────
     const dateObj = new Date(date)
