@@ -22,6 +22,7 @@ export default function AdminTeachersPage() {
     name: "",
     idNumber: "",
     password: "",
+    contactEmail: "",
   });
 
   const [newPassword, setNewPassword] = useState("");
@@ -60,7 +61,7 @@ export default function AdminTeachersPage() {
       if (res.ok) {
         toast.success(`Teacher ${isEdit ? "updated" : "added"} successfully!`);
         setShowAddModal(false);
-        setFormData({ id: "", userId: "", name: "", idNumber: "", password: "" });
+        setFormData({ id: "", userId: "", name: "", idNumber: "", password: "", contactEmail: "" });
         fetchTeachers();
       } else {
         const errData = await res.text();
@@ -110,7 +111,7 @@ export default function AdminTeachersPage() {
         <button
           onClick={() => {
             setModalMode("add");
-            setFormData({ id: "", userId: "", name: "", idNumber: "", password: "" });
+            setFormData({ id: "", userId: "", name: "", idNumber: "", password: "", contactEmail: "" });
             setShowAddModal(true);
           }}
           className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-200"
@@ -141,6 +142,7 @@ export default function AdminTeachersPage() {
               <tr className="bg-slate-50/50">
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Teacher</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">ID Number</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Email</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned Classes</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
@@ -153,6 +155,7 @@ export default function AdminTeachersPage() {
                       <tr key={i} className="animate-pulse">
                         <td className="px-6 py-4"><div className="h-10 w-40 bg-slate-100 rounded" /></td>
                         <td className="px-6 py-4"><div className="h-6 w-24 bg-slate-100 rounded" /></td>
+                        <td className="px-6 py-4"><div className="h-6 w-32 bg-slate-100 rounded" /></td>
                         <td className="px-6 py-4"><div className="h-6 w-32 bg-slate-100 rounded" /></td>
                         <td className="px-6 py-4"><div className="h-8 w-24 bg-slate-100 ml-auto rounded" /></td>
                       </tr>
@@ -176,6 +179,11 @@ export default function AdminTeachersPage() {
                       <td className="px-6 py-4">
                         <span className="font-mono text-sm font-semibold text-indigo-600">
                           {teacher.teacher_id}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-slate-600">
+                          {teacher.contact_email || "N/A"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -203,6 +211,7 @@ export default function AdminTeachersPage() {
                                 name: teacher.user?.name || "",
                                 idNumber: teacher.teacher_id || "",
                                 password: "",
+                                contactEmail: teacher.contact_email || "",
                               });
                               setNewPassword("");
                               setShowAddModal(true);
@@ -281,6 +290,17 @@ export default function AdminTeachersPage() {
                     placeholder="e.g. T1001"
                     value={formData.idNumber}
                     onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Contact Email</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. teacher@example.com"
+                    value={formData.contactEmail}
+                    onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
                   />
                 </div>

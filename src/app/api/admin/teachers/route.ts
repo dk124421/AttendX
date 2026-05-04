@@ -66,7 +66,7 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { id, userId, name, idNumber } = await req.json()
+    const { id, userId, name, idNumber, contactEmail } = await req.json()
 
     if (!id || !userId || !name || !idNumber) {
       return new NextResponse('Missing required fields', { status: 400 })
@@ -81,9 +81,10 @@ export async function PUT(req: Request) {
     if (userError) throw userError
 
     // 2. Update Teacher Profile
+    const finalContactEmail = contactEmail || 'priyalbaldwa10@gmail.com';
     const { error: teacherError } = await supabase
       .from('teachers')
-      .update({ teacher_id: idNumber })
+      .update({ teacher_id: idNumber, contact_email: finalContactEmail })
       .eq('id', id)
 
     if (teacherError) throw teacherError

@@ -431,3 +431,49 @@ export async function sendParentDebarredAlert(
   `
   return sendEmail({ to: email, subject: `⚠️ URGENT: Attendance Alert for ${studentName} — AttendX`, html })
 }
+
+// ──────────────── Security Alert ────────────────
+
+export async function sendSecurityAlert(
+  name: string,
+  email: string,
+  ipAddress: string
+) {
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+      <div style="background: linear-gradient(135deg, #0f172a, #334155); padding: 32px; text-align: center;">
+        <h1 style="color: #fff; margin: 0; font-size: 24px;">🔒 Security Alert</h1>
+        <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Account Locked Due to Suspicious Activity</p>
+      </div>
+      <div style="padding: 32px;">
+        <p style="color: #334155; font-size: 16px; line-height: 1.6;">Dear <strong>${name}</strong>,</p>
+        
+        <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+          We detected <strong>3 consecutive failed login attempts</strong> for your account. As a security precaution, your account has been temporarily locked for 15 minutes.
+        </p>
+
+        <div style="background: #f8fafc; border-left: 4px solid #334155; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #64748b; font-size: 14px;">Attempted From IP:</span>
+            <span style="color: #1e293b; font-weight: 600; font-family: monospace;">${ipAddress}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b; font-size: 14px;">Time:</span>
+            <span style="color: #1e293b; font-weight: 600;">${new Date().toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div style="background: #fee2e2; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <p style="color: #991b1b; font-size: 14px; margin: 0; font-weight: 600; line-height: 1.6;">
+            If this was not you, please contact the administrator immediately to secure your account.
+          </p>
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated security email from AttendX. Please do not reply.</p>
+        </div>
+      </div>
+    </div>
+  `
+  return sendEmail({ to: email, subject: `🔒 Security Alert: Account Locked — AttendX`, html })
+}

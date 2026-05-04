@@ -180,7 +180,7 @@ export default function AdminStudentsPage() {
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrollment No.</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Course</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Year</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Parent Email</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Email</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
@@ -231,7 +231,7 @@ export default function AdminStudentsPage() {
                       <div className="flex items-center gap-1.5">
                         <Mail size={12} className="text-slate-400" />
                         <span className="text-xs text-slate-500 truncate max-w-[160px]">
-                          {student.parent_email || "—"}
+                          {student.contact_email || "—"}
                         </span>
                       </div>
                     </td>

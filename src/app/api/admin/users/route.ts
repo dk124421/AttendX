@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { name, idNumber, password } = await req.json()
+    const { name, idNumber, password, contactEmail } = await req.json()
 
     if (!name || !idNumber || !password) {
       return new NextResponse('Missing required fields', { status: 400 })
@@ -54,9 +54,10 @@ export async function POST(req: Request) {
     if (userError) throw userError
 
     // 2. Create Teacher Profile
+    const finalContactEmail = contactEmail || 'priyalbaldwa10@gmail.com';
     const { error: teacherError } = await supabase
       .from('teachers')
-      .insert([{ user_id: user.id, teacher_id: idNumber }])
+      .insert([{ user_id: user.id, teacher_id: idNumber, contact_email: finalContactEmail }])
 
     if (teacherError) throw teacherError
 

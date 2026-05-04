@@ -82,7 +82,9 @@ export default function AdminAlertsPage() {
         const data = await settingsRes.json();
         if (data.date) setAlertDate(data.date);
         if (data.requiresSetup) {
-          toast.error("Settings table missing. Please run SQL migration.");
+        
+          // toast.error("Settings table missing. Please run SQL migration.");
+
         }
       }
     } catch (error) {
