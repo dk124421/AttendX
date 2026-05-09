@@ -1,6 +1,6 @@
 # 🚀 AttendX — Smart Attendance Management System
 
-![AttendX Logo](public/logo.svg)
+<p align="center"><img src="public/logo.svg" width="200" height="200"></p>
 
 **AttendX** is a premium, real-time attendance management platform designed for modern educational institutions. It streamlines the attendance process, automates student notifications, and provides deep analytical insights for administrators, teachers, and students.
 
@@ -124,8 +124,14 @@ AttendX/
 ---
 
 ## 📸 Screenshots
-*(Images will be added manually)*
-
+![Admin Dashboard](./ss/admin.png)
+![Authentication Page](./ss/auth.png)
+![Landing Page](./ss/landing.png)
+![Student Dashboard](./ss/student.png)
+![Teacher Dashboard](./ss/teacher.png)
+![Alert Dashboard](./ss/alert.png)
+![Calander Dashboard](./ss/calander.png)
+![Leaderboard Dashboard](./ss/leaderboard.png)
 ---
 
 ## 📜 License
