@@ -524,12 +524,38 @@ export default function TeacherAttendance() {
                   </table>
                 </div>
 
-                {/* Submit Button */}
-                <div className="flex justify-end pt-2">
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 mt-2 border-t border-slate-100/50">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={() => {
+                        const newMarking: Record<string, string> = {};
+                        students.forEach(s => (newMarking[s.id] = "PRESENT"));
+                        setMarking(newMarking);
+                      }}
+                      disabled={loading || students.length === 0}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      <CheckCircle size={15} />
+                      Mark All Present
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newMarking: Record<string, string> = {};
+                        students.forEach(s => (newMarking[s.id] = "ABSENT"));
+                        setMarking(newMarking);
+                      }}
+                      disabled={loading || students.length === 0}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      <X size={15} />
+                      Mark All Absent
+                    </button>
+                  </div>
                   <button
                     onClick={handleSubmitClick}
                     disabled={loading || students.length === 0}
-                    className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all active:scale-95 disabled:opacity-50 shadow-lg
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all active:scale-95 disabled:opacity-50 shadow-lg
                       bg-[#1e3a5f] text-white hover:bg-[#162d4a]"
                   >
                     <Send size={15} />
