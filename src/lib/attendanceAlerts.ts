@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { logger } from './logger'
 import {
   sendConsecutiveAbsentAlert,
   sendMonthlyAbsentAlert,
@@ -58,7 +59,7 @@ export async function checkConsecutiveAbsences(studentId: string) {
         .limit(1)
 
       if (existingAlert && existingAlert.length > 0) {
-        console.log(`[ALERT] Consecutive absent alert already sent recently for student ${studentId}`)
+        logger.info(`[ALERT] Consecutive absent alert already sent recently for student ${studentId}`)
         return
       }
 
@@ -82,7 +83,7 @@ export async function checkConsecutiveAbsences(studentId: string) {
           alert_year: new Date().getFullYear(),
           details: { consecutiveDays: consecutiveAbsentDays, email: studentInfo.email },
         })
-        console.log(`[ALERT] Consecutive absent alert sent to ${studentInfo.name} (${consecutiveAbsentDays} days)`)
+        logger.info(`[ALERT] Consecutive absent alert sent to ${studentInfo.name} (${consecutiveAbsentDays} days)`)
       }
 
       // Also save as in-app notification
@@ -93,7 +94,7 @@ export async function checkConsecutiveAbsences(studentId: string) {
       })
     }
   } catch (err) {
-    console.error('[ALERT] Error checking consecutive absences:', err)
+    logger.error('[ALERT] Error checking consecutive absences', err)
   }
 }
 
@@ -139,7 +140,7 @@ export async function checkMonthlyNonConsecutiveAbsences(
         .limit(1)
 
       if (existingAlert && existingAlert.length > 0) {
-        console.log(`[ALERT] Monthly absent alert already sent for student ${studentId} (${month}/${year})`)
+        logger.info(`[ALERT] Monthly absent alert already sent for student ${studentId} (${month}/${year})`)
         return
       }
 
@@ -163,7 +164,7 @@ export async function checkMonthlyNonConsecutiveAbsences(
           alert_year: year,
           details: { absentDays, email: studentInfo.email },
         })
-        console.log(`[ALERT] Monthly absent alert sent to ${studentInfo.name} (${absentDays} days in ${monthName})`)
+        logger.info(`[ALERT] Monthly absent alert sent to ${studentInfo.name} (${absentDays} days in ${monthName})`)
       }
 
       await supabase.from('notifications').insert({
@@ -173,7 +174,7 @@ export async function checkMonthlyNonConsecutiveAbsences(
       })
     }
   } catch (err) {
-    console.error('[ALERT] Error checking monthly absences:', err)
+    logger.error('[ALERT] Error checking monthly absences', err)
   }
 }
 
@@ -198,7 +199,7 @@ export async function generateMonthlyDebarredReport(month: number, year: number)
       `)
 
     if (studentsError || !students) {
-      console.error('[DEBARRED] Failed to fetch students:', studentsError)
+      logger.error('[DEBARRED] Failed to fetch students', studentsError)
       return { success: false, error: 'Failed to fetch students' }
     }
 
@@ -210,7 +211,7 @@ export async function generateMonthlyDebarredReport(month: number, year: number)
       .lte('date', endOfMonth)
 
     if (attError) {
-      console.error('[DEBARRED] Failed to fetch attendance:', attError)
+      logger.error('[DEBARRED] Failed to fetch attendance', attError)
       return { success: false, error: 'Failed to fetch attendance' }
     }
 
@@ -258,7 +259,7 @@ export async function generateMonthlyDebarredReport(month: number, year: number)
           .limit(1)
 
         if (existingAlert && existingAlert.length > 0) {
-          console.log(`[DEBARRED] Alert already sent for ${userName} (${month}/${year})`)
+          logger.info(`[DEBARRED] Alert already sent for ${userName} (${month}/${year})`)
           continue
         }
 
@@ -335,7 +336,7 @@ export async function generateMonthlyDebarredReport(month: number, year: number)
       }
     }
 
-    console.log(`[DEBARRED] Monthly report complete: ${debarredStudents.length} debarred, ${emailsSent} emails sent, ${emailsFailed} failed`)
+    logger.info(`[DEBARRED] Monthly report complete: ${debarredStudents.length} debarred, ${emailsSent} emails sent, ${emailsFailed} failed`)
 
     return {
       success: true,
@@ -352,7 +353,7 @@ export async function generateMonthlyDebarredReport(month: number, year: number)
       })),
     }
   } catch (err) {
-    console.error('[DEBARRED] Error generating report:', err)
+    logger.error('[DEBARRED] Error generating report', err)
     return { success: false, error: 'Internal error' }
   }
 }
@@ -379,7 +380,7 @@ async function getStudentEmailInfo(studentId: string) {
 
   // Don't send to fake virtual emails
   if (!email || email.endsWith('@student.attendx.edu')) {
-    console.log(`[ALERT] No valid email for student ${studentId}, skipping email send`)
+    logger.info(`[ALERT] No valid email for student ${studentId}, skipping email send`)
     return null
   }
 

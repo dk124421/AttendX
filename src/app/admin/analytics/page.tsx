@@ -5,6 +5,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import { Bell, TrendingUp, Send, Loader2 } from "lucide-react";
 import io from "socket.io-client";
+import { logger } from "@/lib/logger";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler);
 
@@ -40,7 +41,7 @@ export default function AnalyticsPage() {
         setData(json);
       }
     } catch (error) {
-      console.error(error);
+      logger.error("Failed to fetch analytics data", error);
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export default function AnalyticsPage() {
       socket.emit('admin_notification', { message: notificationMsg, time: new Date().toISOString() });
       setNotificationMsg("");
     } catch (error) {
-      console.error(error);
+      logger.error("Failed to send notification", error);
     } finally {
       setSending(false);
     }

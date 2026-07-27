@@ -16,6 +16,7 @@ import {
   Filter
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { logger } from "@/lib/logger";
 
 type StudentAlert = {
   id: string;
@@ -88,7 +89,7 @@ export default function AdminAlertsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch alerts data:", error);
+      logger.error("Failed to fetch alerts data", error);
       toast.error("Failed to load alerts data");
     } finally {
       setIsLoading(false);

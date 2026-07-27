@@ -31,10 +31,7 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
           
           // If the NextAuth session is completely gone (e.g., deleted cookies or expired),
           // reload the window to enforce standard redirect-to-login logic.
-          if (status === "unauthenticated") {
-            window.location.reload();
-          } else {
-            // Soft refresh router to re-fetch any server components that might be stale
+          if (status === "authenticated") {
             router.refresh();
           }
         } catch (err) {

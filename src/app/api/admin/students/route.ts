@@ -168,7 +168,7 @@ export async function DELETE(req: Request) {
       .eq('id', userId)
 
     if (userError) {
-      console.warn("User deletion failed:", userError);
+      logger.warn("User deletion failed", userError);
       return new NextResponse('Cannot delete user (might have active relations)', { status: 400 })
     }
 
