@@ -3,14 +3,17 @@ import { supabase } from '@/lib/supabase'
 import { sendDebarredAlert } from '@/lib/email'
 import { logger } from '@/lib/logger'
 
-// Verify cron secret for security (optional but recommended in production)
-// In Vercel, this is passed via Authorization header.
+// Verify cron secret for security in production
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
-  
-  // Note: For actual Vercel deployment, you would check:
-  // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) { return 401 }
-  // We'll skip strict validation here to allow testing, but this is important for prod.
+
+  // In production, enforce CRON_SECRET check to prevent unauthorized access
+  if (process.env.CRON_SECRET) {
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      logger.warn('[CRON] Unauthorized cron request blocked')
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+  }
 
   try {
     // 1. Check if today is the scheduled date

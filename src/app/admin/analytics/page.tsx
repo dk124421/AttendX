@@ -22,10 +22,25 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetchData();
-    socket = io(process.env.NEXT_PUBLIC_SITE_URL || window.location.origin);
+    socket = io(process.env.NEXT_PUBLIC_SITE_URL || window.location.origin, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+    });
     
     socket.on('admin_notification', (msg: any) => {
       setNotifications(prev => [msg.message, ...prev].slice(0, 5));
+    });
+
+    socket.on('connect_error', (err: any) => {
+      logger.warn("Socket.IO connection error, will retry", err?.message);
+    });
+
+    socket.on('reconnect', (attempt: number) => {
+      logger.info(`Socket.IO reconnected after ${attempt} attempts`);
     });
 
     return () => {
